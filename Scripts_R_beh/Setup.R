@@ -15,8 +15,7 @@ library(tidyverse)
 library(ggh4x) # tweaking ggplots (e.g. facets)
 library(grid)  # manually adding panel/label names with shade
 
-
-FigDir = '../Figs/'
+FigDir = '/Users/liuq13/Library/CloudStorage/Box-Box/NODEAP_data_analysis/Figs/'
 pd <- position_dodge(0.6) # set dodge width
 
 # some common ggplot settings

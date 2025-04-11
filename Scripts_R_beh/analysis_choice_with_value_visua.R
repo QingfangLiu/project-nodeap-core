@@ -4,10 +4,14 @@ source('Setup.R')
 
 #######################
 
-load(file = '../ProcessedData/choice_dat_ss_w_base.RData')
-load(file = '../ProcessedData/choice_cue_mapping_post.RData')
-load(file = '../ProcessedData/conditioning_cue_mapping.RData')
-df_w = read.csv(file = '../BehModeling/df_w_per_sub_sess_cuepair.csv')
+pro_dat_dir = '/Users/liuq13/Library/CloudStorage/Box-Box/NODEAP_data_analysis/ProcessedData'
+
+load(file = file.path(pro_dat_dir,'choice_dat_ss_w_base.RData'))
+load(file = file.path(pro_dat_dir,'choice_cue_mapping_post.RData'))
+load(file = file.path(pro_dat_dir,'conditioning_cue_mapping.RData'))
+
+df_w = read.csv(file = 
+                  '/Users/liuq13/Library/CloudStorage/Box-Box/NODEAP_data_analysis/BehModeling_output/csv/df_w_per_sub_sess_cuepair.csv')
 
 find_cue_id = function(left,right,sub,sess){
   # input: left, right: cue id in choice task
@@ -61,7 +65,7 @@ use_choice_dat_ss <- use_choice_dat_ss %>%
 
 # save the full choice data set
 save(use_choice_dat_ss,
-     file = '../ProcessedData/choice_dat_ss_w_base_values.RData')
+     file = file.path(pro_dat_dir,'choice_dat_ss_w_base_values.RData'))
 
 
 # showing for each subject
@@ -159,8 +163,12 @@ p_choice_2 = summary_use_choice_dat_ss_vdiff %>%
 cor.test(summary_use_choice_dat_ss_vdiff$value_diff, 
     summary_use_choice_dat_ss_vdiff$MeanChoice)
 
-pdf(file.path(FigDir,'Choice_w_values_agg.pdf'),10,4)
-ggarrange(p_choice_1,p_choice_2)
+pdf(file.path(FigDir,'Choice_w_values_agg_gradient.pdf'),5,4)
+print(p_choice_1)
+dev.off()
+
+pdf(file.path(FigDir,'Choice_w_values_agg.pdf'),5,4)
+print(p_choice_2)
 dev.off()
 
 pdf(file.path(FigDir,'Choice_w_values_size_agg.pdf'),5,4)
