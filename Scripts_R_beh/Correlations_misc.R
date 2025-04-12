@@ -2,8 +2,6 @@
 rm(list = ls())
 source('Setup.R')
 
-pro_dat_dir = '/Users/liuq13/Library/CloudStorage/Box-Box/NODEAP_data_analysis/ProcessedData'
-
 # this code correlates the choices with odor pleasantness ratings
 # as well as with TMS ratings
 
