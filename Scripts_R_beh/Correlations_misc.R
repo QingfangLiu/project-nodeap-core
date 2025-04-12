@@ -2,6 +2,8 @@
 rm(list = ls())
 source('Setup.R')
 
+pro_dat_dir = '/Users/liuq13/Library/CloudStorage/Box-Box/NODEAP_data_analysis/ProcessedData'
+
 # this code correlates the choices with odor pleasantness ratings
 # as well as with TMS ratings
 
@@ -9,8 +11,8 @@ source('Setup.R')
 ### correlate the choice updating with selective satiation idx ###
 ###############################
 
-load(file = '../ProcessedData/Summary_Choice_corrected_dat.RData')
-load(file = '../ProcessedData/SelectSate_dat.RData')
+load(file = file.path(pro_dat_dir,'Summary_Choice_corrected_dat.RData'))
+load(file = file.path(pro_dat_dir,'SelectSate_dat.RData'))
 
 # (having checked rows are aligned)
 df_comb = cbind(summary_choice_corrected,
@@ -43,7 +45,7 @@ pdf(file.path(FigDir,'Corr_SelectSate_choice.pdf'),5,5)
 print(corr1)
 dev.off()
 
-pdf(file.path(FigDir,'Corr_SelectSate_choice_by_Cond.pdf'),5,4)
+pdf(file.path(FigPaperDir,'Corr_SelectSate_choice_by_Cond.pdf'),5,4)
 ggMarginal(corr2,type = 'density',groupFill = T)
 dev.off()
 

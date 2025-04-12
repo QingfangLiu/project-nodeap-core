@@ -7,7 +7,8 @@ rm(list = ls())
 source('Setup.R')
 
 # load the full choice data set
-load(file = '../ProcessedData/choice_dat.RData')
+
+load(file = file.path(pro_dat_dir,'choice_dat.RData'))
 
 # only look at choice with one sweet and one savory (denoted as '_ss')
 # perhaps where the effect is the strongest
@@ -175,7 +176,7 @@ pcorr3=ggplot(df_pre_post_summary,
   labs(x=lab2, y=lab3,title = NULL) + common +
   theme(legend.position = 'none')
 
-pdf(file.path(FigDir,'Choice_corr_paper.pdf'),8,8)
+pdf(file.path(FigPaperDir,'Choice_corr_paper.pdf'),8,8)
 ggarrange(pcorr1,pcorr2,pcorr3,ncol = 2,nrow = 2)
 dev.off()
 
