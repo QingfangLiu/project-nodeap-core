@@ -130,8 +130,6 @@ c2=summary_choice_one_change %>%
   coord_cartesian(ylim = c(-1, 1.3)) +
   theme(legend.position = "none") 
 
-  stat_compare_means(method = "wilcox.test", paired = TRUE, label = "p")
-
 pdf(file.path(FigDir,'Day2TMS_ChoiceOneOdor_changes.pdf'),7,4)
 print(c2)
 dev.off()
@@ -283,11 +281,6 @@ t2=choice_df_sated_pref_change %>%
   labs(x = NULL, y = "Preference of sated odor\n (post - pre-meal)", 
        title = NULL) + common +
   theme(legend.position = "none") 
-
-  stat_compare_means(method = "wilcox.test", 
-                   paired = TRUE, 
-                   method.args = list(alternative='g'),
-                   label = "p")
 
 pdf(file.path(FigDir,'Day2TMS_ChoiceOneOdor_Pref_change1.pdf'),7,4)
 print(t2)
