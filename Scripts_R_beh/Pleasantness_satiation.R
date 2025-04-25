@@ -119,11 +119,11 @@ p3b=ggplot(dat,aes(x=IfDevalue,y=Pleasant)) +
   labs(x = NULL, y = "Odor pleasantness", title = NULL) + common +
   theme(legend.position = c(0.25, 0.15)) 
 
-pdf(file.path(FigDir,'PleasantRatings_comp.pdf'),8,12)
+pdf(file.path(FigPaperDir,'PleasantRatings_comp.pdf'),8,12)
 ggarrange(p1,p2,nrow = 2)
 dev.off()
 
-pdf(file.path(FigDir,'PleasantRatings.pdf'),4,4)
+pdf(file.path(FigPaperDir,'PleasantRatings.pdf'),4,4)
 print(p3b)
 dev.off()
 
@@ -264,6 +264,11 @@ anova(model0,model3)
 summary(model3)
 anova(model0,model4)
 # devaluation effect was not modulated by Cond, Sess, DevaluedOdor, StimLoc
+
+
+################## below is not included in the paper #######################
+
+
 
 p1=ggplot(rereduced,aes(x=Cond,y=Didx,color=Cond,fill=Cond)) +
   geom_jitter(aes(shape=StimLoc),size = 2, alpha = 0.8,show.legend = F) +
