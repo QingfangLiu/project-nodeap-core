@@ -21,7 +21,7 @@ load(file = '../ProcessedData/SelectSate_dat.RData')
 
 # create a var ValueDiff from difference of sated and non-sated
 choice_dat_ss_w_base = use_choice_dat_ss %>%
-  mutate(ValueDiff = ValueSated-ValueNonSated,
+  mutate(ValueDiff = ValueSated - ValueNonSated,
          Didx = NA)
 
 # add the session-wise measure Didx to the trial-wise dataset
