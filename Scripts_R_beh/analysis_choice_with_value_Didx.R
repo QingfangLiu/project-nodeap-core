@@ -1,11 +1,16 @@
 
-# this code adds the learned cue weights as covariates in similar mixed-effect
-# models to analyze choice data
+# this code does mixed-effect models and comparisons on choice data
+# only look at choices between sated option and non-sated option
+# with added covariates of 
+# (1) learned cue weights
+# (2) selective satiation index (Didx): should positively scale with sated odor choice
+
 # looked at Day 2 TMS effect first
 # then Day 1 TMS effect
 
-# it also adds the selective satiation index (Didx) to the regression model
-# expect this to be positively correlated with choice of sated odors
+# previously looked data for two sets separately but erased for cleanness
+# last update: 4/30/2025
+
 
 rm(list = ls())
 source('Setup.R')
@@ -81,7 +86,7 @@ summary(model_choice_2)
 # with only sess 1 (sham-cTBS) and 3 (sham-sham) so remove this
 # when analyzing day 1 TMS effect
 
-# split subjects into pOFC and aOFC groups
+# pOFC subjects
 use_trial_dat_pOFC = choice_dat_ss_w_base %>%
                   subset((!SubID=='NODEAP_17') &
                          PrePost=='Post' &
@@ -90,34 +95,18 @@ use_trial_dat_pOFC = choice_dat_ss_w_base %>%
   mutate(CuePair=factor(CuePair)) %>%
   filter(complete.cases(.))   # remove all NA trials
 
-# check on aOFC-cTBS subjects
-use_trial_dat_aOFC = choice_dat_ss_w_base %>%
-                            subset(PrePost=='Post' &
-                            StimLoc=='aOFC' & 
-                            Cond %in% c('cTBS-sham','sham-sham')) %>%
-  mutate(CuePair=factor(CuePair)) %>%
-  filter(complete.cases(.))   # remove all NA trials
-
-
-######## collapsing across set A and set B
-
-# pOFC group
-model_choice_0 <- glmer(Choice ~ Didx + 
-                          ValueDiff + base + (1|SubID), 
+model_choice_0 <- glmer(Choice ~ Didx + ValueDiff + base + (1|SubID), 
                         data = use_trial_dat_pOFC,family = 'binomial')
-model_choice_1 <- glmer(Choice ~ Cond + Didx + 
-                          ValueDiff + base + (1|SubID), 
+model_choice_1 <- glmer(Choice ~ Cond + Didx + ValueDiff + base + (1|SubID), 
                         data = use_trial_dat_pOFC,family = 'binomial')
 anova(model_choice_1,model_choice_0) # no effect of TMS, p=0.2438
 summary(model_choice_0)
 # sig. valuediff, base, marginal sig. Didx
 
 # adding Sess
-model_choice_2 <- glmer(Choice ~ Didx + Sess + 
-                          ValueDiff + base + (1|SubID), 
+model_choice_2 <- glmer(Choice ~ Didx + Sess + ValueDiff + base + (1|SubID), 
                         data = use_trial_dat_pOFC,family = 'binomial')
-model_choice_3 <- glmer(Choice ~ Cond + Didx + Sess + 
-                          ValueDiff + base + (1|SubID), 
+model_choice_3 <- glmer(Choice ~ Cond + Didx + Sess + ValueDiff + base + (1|SubID), 
                         data = use_trial_dat_pOFC,family = 'binomial')
 anova(model_choice_2,model_choice_3) # no effect of TMS, p=0.244
 summary(model_choice_2)
@@ -149,25 +138,27 @@ p_pOFC = ggplot(predictions, aes(x = x, y = predicted)) +
   common
 
 
-# aOFC group
-model_choice_0 <- glmer(Choice ~ Didx + 
-                          ValueDiff + base + (1|SubID), 
+# aOFC subjects
+use_trial_dat_aOFC = choice_dat_ss_w_base %>%
+  subset(PrePost=='Post' &
+           StimLoc=='aOFC' & 
+           Cond %in% c('cTBS-sham','sham-sham')) %>%
+  mutate(CuePair=factor(CuePair)) %>%
+  filter(complete.cases(.))   # remove all NA trials
+
+model_choice_0 <- glmer(Choice ~ Didx + ValueDiff + base + (1|SubID), 
                         data = use_trial_dat_aOFC,family = 'binomial')
-model_choice_1 <- glmer(Choice ~ Cond + Didx + 
-                          ValueDiff + base + (1|SubID), 
+model_choice_1 <- glmer(Choice ~ Cond + Didx + ValueDiff + base + (1|SubID), 
                         data = use_trial_dat_aOFC,family = 'binomial')
 anova(model_choice_1,model_choice_0) # marginal effect of TMS, p=0.066
 summary(model_choice_0)
 summary(model_choice_1)
 
-model_choice_2 <- glmer(Choice ~ Sess + Didx + 
-                          ValueDiff + base + (1|SubID), 
+model_choice_2 <- glmer(Choice ~ Sess + Didx + ValueDiff + base + (1|SubID), 
                         data = use_trial_dat_aOFC,family = 'binomial')
-model_choice_3 <- glmer(Choice ~ Cond + Didx + Sess +
-                          ValueDiff + base + (1|SubID), 
+model_choice_3 <- glmer(Choice ~ Cond + Didx + Sess + ValueDiff + base + (1|SubID), 
                         data = use_trial_dat_aOFC,family = 'binomial')
-model_choice_4 <- glmer(Choice ~ Cond * Sess + Didx + 
-                          ValueDiff + base + (1|SubID), 
+model_choice_4 <- glmer(Choice ~ Cond * Sess + Didx + ValueDiff + base + (1|SubID), 
                         data = use_trial_dat_aOFC,family = 'binomial')
 anova(model_choice_2,model_choice_0) # sig. effect of Sess, p=0.0019
 anova(model_choice_2,model_choice_3) # no effect of TMS after having sess, p=0.23
@@ -275,25 +266,4 @@ ggplot(predictions, aes(x = x, y = predicted, color = x)) +
   scale_color_manual(values = use.col.conds) +
   common +
   theme(legend.position = "none") 
-
-
-# if also including sess in these models
-model_choice_2 <- glmer(Choice ~ StimLoc * Cond + Sess + 
-                          Didx + ValueDiff + base + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-summary(model_choice_2)
-
-model_choice_1 <- glmer(Choice ~ StimLoc + Cond + Sess + 
-                          Didx + ValueDiff + base + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-summary(model_choice_1)
-
-model_choice_0 <- glmer(Choice ~ Cond + Sess + 
-                          Didx + ValueDiff + base + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-summary(model_choice_0)
-anova(model_choice_0,model_choice_1)
-anova(model_choice_0,model_choice_2)
-anova(model_choice_2,model_choice_1)
-
 
