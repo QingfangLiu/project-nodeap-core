@@ -3,7 +3,7 @@ rm(list = ls())
 source('Setup.R')
 
 # this code correlates the choices with odor pleasantness ratings
-# as well as with TMS ratings
+# as well as correlate the choice updating with TMS ratings
 
 ###############################
 ### correlate the choice updating with selective satiation idx ###
