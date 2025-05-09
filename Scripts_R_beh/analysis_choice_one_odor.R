@@ -7,7 +7,6 @@ source('Setup.R')
 load(file = '../ProcessedData/choice_dat.RData')
 
 ##############################
-# another set of analysis #
 # only look at choice with one odor and one air
 
 # ChoiceType: 1,2 (1: sweet, 2:savory)
@@ -24,7 +23,7 @@ summary_choice_one = choice_dat_one %>%
   reframe(Choice=mean(ChosenOdor,na.rm = T))
 
 # create a session-wise measure of odor preference called 'pref':
-# preference of sated odor over non-sated odors
+# preference of sated odor over non-sated odors (before eating meal)
 pre_choice_df = summary_choice_one %>%
   subset(PrePost=='Pre') %>%
   group_by(SubID,Cond,OdorType) %>%
@@ -189,8 +188,35 @@ c3=summary_choice_one_comp %>%
                      method.args = list(alternative='g'),
                      label = "p")
 
-pdf(file.path(FigDir,'Day2TMS_ChoiceOneOdor_Pref_change.pdf'),7,4)
+pdf(file.path(FigPaperDir,'Day2TMS_ChoiceOneOdor_Pref_change.pdf'),7,4)
 print(c3)
+dev.off()
+
+# similar plot to look at Day 1 TMS effect
+c4 = summary_choice_one_comp %>%
+  subset(SubID != 'NODEAP_17') %>%
+  subset(Cond %in% c('sham-sham','cTBS-sham')) %>%
+  ggplot(aes(x=Cond,y=diff,fill=Cond)) +
+  geom_line(aes(group=SubID), position = pd, linewidth = 0.2, color = 'darkgray') +
+  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
+  geom_jitter(aes(color=Cond,group=SubID), position = pd, size = 2, alpha = 0.8) +
+  facet_wrap2(~StimLoc,scales = 'free',
+              strip = strip,
+              axes = 'all') +
+  scale_color_manual(values = use.col.conds) +
+  scale_fill_manual(values = use.col.conds) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
+  coord_cartesian(ylim = c(-1, 1)) +
+  labs(x = NULL, title = NULL,
+       y = "Preference of sated odor\n (post - pre-meal)") + common +
+  theme(legend.position = "none") +
+  stat_compare_means(method = "wilcox.test", 
+                     paired = TRUE, 
+                     method.args = list(alternative='g'),
+                     label = "p")
+
+pdf(file.path(FigPaperDir,'Day1TMS_ChoiceOneOdor_Pref_change.pdf'),7,4)
+print(c4)
 dev.off()
 
 

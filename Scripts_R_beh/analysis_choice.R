@@ -25,99 +25,6 @@ summary_choice_ss = choice_dat_ss %>%
   reframe(Choice=mean(Choice,na.rm = T),
         rt=mean(rt,na.rm = T)) 
 
-# get a more summary of this for reporting to clinical trials 
-summary_summary_choice_ss = choice_dat_ss %>%
-  subset(PrePost=='Post') %>%
-  group_by(SubID,StimOrder,StimLoc,Cond,PrePost) %>%
-  reframe(Choice=mean(Choice,na.rm = T)) 
-stat_choice = summary_summary_choice_ss %>%
-  group_by(StimLoc,Cond) %>%
-  reframe(mean=mean(Choice),sd=sd(Choice))
-
-# separted by stimulation location
-p1=summary_choice_ss %>%
-  ggplot(aes(x=Cond,y=Choice,fill=interaction(PrePost,Set))) +
-  geom_boxplot(alpha=0.5) +
-  geom_jitter(aes(color=interaction(PrePost,Set)),
-              position = position_jitterdodge(dodge.width = 0.75, jitter.width = 0.3), 
-              size = 1, alpha = 0.8) +
-  facet_wrap(~StimLoc) +
-  common +
-  labs(x = NULL, y = "Choice of Sated Odor",title = NULL)
-
-# collapsing aOFC and pOFC stimulations
-p2=summary_choice_ss %>%
-  ggplot(aes(x=Cond,y=Choice,fill=interaction(PrePost,Set))) +
-  geom_boxplot(alpha=0.5) +
-  geom_jitter(aes(color=interaction(PrePost,Set)),
-              position = position_jitterdodge(dodge.width = 0.75, jitter.width = 0.3), 
-              size = 1, alpha = 0.8) +
-  common +
-  labs(x = NULL, y = "Choice of Sated Odor",title = NULL)
-
-pdf(file.path(FigDir,'ChoiceSatedOdor.pdf'),8,5)
-print(p1)
-print(p2)
-dev.off()
-
-
-#########################################
-# focus on Set B
-# only on pOFC
-use.dat = subset(choice_dat_ss, 
-                   Set=='B' & 
-                   StimLoc=='pOFC' &
-                   Cond %in% c('sham-cTBS','sham-sham'))
-model_choice_1 <- glmer(Choice ~ Cond + (1|SubID), data = use.dat,family = 'binomial')
-model_choice_0 <- glmer(Choice ~ (1|SubID), data = use.dat,family = 'binomial')
-anova(model_choice_1,model_choice_0)
-summary(model_choice_1)
-# lower choice in sham-sham condition
-
-# only on aOFC
-use.dat = subset(choice_dat_ss, 
-                   Set=='B' & 
-                   StimLoc=='aOFC' &
-                   Cond %in% c('sham-cTBS','sham-sham'))
-model_choice_1 <- glmer(Choice ~ Cond + (1|SubID), data = use.dat,family = 'binomial')
-model_choice_0 <- glmer(Choice ~ (1|SubID), data = use.dat,family = 'binomial')
-anova(model_choice_1,model_choice_0)
-# no sig difference b/t conditions
-
-# if including both aOFC & pOFC
-use.dat = subset(choice_dat_ss, Set=='B' &
-                   Cond %in% c('sham-cTBS','sham-sham'))
-model_choice_2 <- glmer(Choice ~ Cond + StimLoc + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-model_choice_3 <- glmer(Choice ~ Cond * StimLoc + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-anova(model_choice_2,model_choice_3)
-# interaction efffect between condition and location
-# was significant
-
-# Set A
-# if only focused on pOFC
-use.dat = subset(choice_dat_ss, Set=='A' &
-                   StimLoc=='pOFC' &
-                   Cond %in% c('sham-cTBS','sham-sham'))
-model_choice_1 <- glmer(Choice ~ Cond * PrePost + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-model_choice_0 <- glmer(Choice ~ Cond + PrePost + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-anova(model_choice_1,model_choice_0)
-# p = 0.291
-
-# if only focused on aOFC
-use.dat = subset(choice_dat_ss, Set=='A' &
-                   StimLoc=='aOFC' &
-                   Cond %in% c('sham-cTBS','sham-sham'))
-model_choice_1 <- glmer(Choice ~ Cond * PrePost + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-model_choice_0 <- glmer(Choice ~ Cond + PrePost + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-anova(model_choice_1,model_choice_0)
-# p = 0.4616
-
 ###############################################
 # improved from above by considering session-wise odor bias
 # using pre(A) as baseline
@@ -224,7 +131,7 @@ s1=summary_choice_corrected %>%
     legend.position.inside = c(0.3,0.96),
       legend.key.size = unit(0.28,'cm')) 
 
-pdf(file.path(FigDir,'Day2_overall_ChoiceSatedOdor.pdf'),4,4)
+pdf(file.path(FigPaperDir,'Day2_overall_ChoiceSatedOdor.pdf'),4,4)
 print(s1)
 dev.off()
 
@@ -348,33 +255,17 @@ c2=summary_choice_corrected %>%
   labs(x = NULL, title = NULL, y = "Choice of sated odor\n (post - pre-meal)") + 
   common + theme(legend.position = "none")
 
-# look at how satiation effect on choice updates
-# changes over sessions
-# did not see higher satiation in the first session number
-summary_choice_corrected %>%
-  subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
-  mutate(Sess=factor(Sess)) %>%
-  ggplot(aes(x=Sess,y=ChoiceChangeAB,fill=Sess)) +
-  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  scale_fill_manual(values = use.col.sess) +
-  scale_color_manual(values = use.col.sess) +
-  facet_wrap(~StimLoc) +
-  geom_jitter(aes(color=Sess,group=SubID), position = pd, size = 2, alpha = 0.8) +
-  labs(x = NULL, title = NULL,
-       y = "Choice of Sated Odor") + common + 
-  theme(legend.position = "none")
-
 pdf(file.path(FigDir,'ChoiceSatedOdor_Changes_all_conds.pdf'),8,7)
 print(cc1)
 print(cc2)
 print(cc3)
 dev.off()
 
-pdf(file.path(FigDir,'Day2_TMS_ChoiceSatedOdor_Changes.pdf'),7,4)
+pdf(file.path(FigPaperDir,'Day2_TMS_ChoiceSatedOdor_Changes.pdf'),7,4)
 print(c1)
 dev.off()
 
-pdf(file.path(FigDir,'Day2_TMS_ChoiceSatedOdor_Changes_by_order.pdf'),11,8)
+pdf(file.path(FigPaperDir,'Day2_TMS_ChoiceSatedOdor_Changes_by_order.pdf'),11,8)
 print(c2)
 dev.off()
 

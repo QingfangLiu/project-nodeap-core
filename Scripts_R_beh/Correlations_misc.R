@@ -23,6 +23,8 @@ corr1=ggplot(df_comb,aes(x=Didx,y=ChoiceChangeAB)) +
        x = 'Selective satiation',
        y = 'Choice of sated odor (post - pre)')
 
+# pOFC only
+# focus on Day 2 TMS effect
 corr2=df_comb %>%
   subset(StimLoc=='pOFC') %>%
   subset(Cond %in% c('sham-sham','sham-cTBS')) %>%

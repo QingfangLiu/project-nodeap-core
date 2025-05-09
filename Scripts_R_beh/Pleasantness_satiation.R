@@ -85,30 +85,7 @@ p2=ggplot(dat,aes(x=IfDevalue,y=Pleasant)) +
         legend.key.size = unit(0.35,'cm'),
         legend.position.inside = c(0.1,0.1))
 
-# use patterns in boxplot
-p3a=ggplot(dat,aes(x=IfDevalue,y=Pleasant)) +
-  geom_boxplot_pattern(aes(pattern = PrePost),
-                       pattern_density = 0.1, 
-                       pattern_angle = 45, 
-                       position = position_dodge(width = 0.75),
-                       pattern_spacing = 0.02,
-                       outlier.shape = NA) +
-  scale_pattern_manual(values = c("Post-meal" = "stripe", 
-                                  "Pre-meal" = "none")) +
-  geom_jitter(aes(shape=PrePost),
-              position = position_jitterdodge(dodge.width = 0.75, jitter.width = 0.2), 
-              size = 1.5, alpha = 0.5) +
-  scale_shape_manual(values = c(1, 17)) +
-  labs(x = NULL, y = "Odor pleasantness", title = NULL) + common +
-  theme(legend.position.inside = c(0.25, 0.15)) +
-  theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_blank(), 
-        axis.line = element_line(color = 'black')) 
-
-# simplify - not using patterns, only dot shapes
-p3b=ggplot(dat,aes(x=IfDevalue,y=Pleasant)) +
+p3=ggplot(dat,aes(x=IfDevalue,y=Pleasant)) +
   geom_boxplot(aes(linetype = PrePost),
                outlier.alpha = 0, alpha=0.4, show.legend = F) +
   geom_jitter(aes(shape=PrePost),
@@ -124,23 +101,10 @@ ggarrange(p1,p2,nrow = 2)
 dev.off()
 
 pdf(file.path(FigPaperDir,'PleasantRatings.pdf'),4,4)
-print(p3b)
+print(p3)
 dev.off()
 
-# a diff way to plot to show lines pre & post meal
-p=ggplot(dat,aes(x=PrePost,y=Pleasant,fill=PrePost)) +
-  geom_boxplot(width = 0.6, alpha = 0.4, outlier.alpha = 0) +
-  geom_line(aes(group=pair), position = pd, linewidth = 0.5, color = 'darkgray') +
-  geom_jitter(aes(color=PrePost,group=pair), position = pd, 
-              size = 1, alpha = 0.8) +
-  facet_wrap(~IfDevalue+Cond) +
-  labs(x = "", y = "Pleasantness Ratings") + common +
-  theme(strip.background = element_blank(),
-        legend.position = 'none')
 
-pdf(file.path(FigDir,'PleasantRatings_w_lines.pdf'),8,8)
-print(p)
-dev.off()
 
 
 # standardize those ratings (z-score) within each sub
@@ -150,7 +114,7 @@ dat <- dat %>%
            sd(Pleasant, na.rm = TRUE)) %>%
   ungroup()
 
-# to plot the change of pleasantness ratings (post meal-pre meal)
+# to plot the change of pleasantness ratings (post-pre meal)
 # create a new df 'reduced' from 'dat'
 pre_plea = subset(dat,PrePost=='Pre-meal')$Pleasant
 post_plea = subset(dat,PrePost=='Post-meal')$Pleasant
@@ -162,59 +126,6 @@ reduced$Pleasant = change_plea
 reduced = reduced %>% 
   mutate(pair=rep(c(1:(nrow(reduced)/2)),each=2))
 
-q1=ggplot(reduced,aes(x=IfDevalue,y=Pleasant)) +
-  geom_boxplot(width = 0.6, alpha = 0.4, position = position_dodge(0.75),
-               outlier.alpha = 0) +
-  geom_jitter(aes(group=pair), position = pd, 
-              size = 1, alpha = 0.8) +
-  geom_line(aes(group=pair), position = pd, linewidth = 0.5, color = 'darkgray') +
-  facet_wrap(~Cond) +
-  labs(x = "", y = "Change of Pleasantness Ratings") + common +
-  theme(strip.background = element_blank(),
-        axis.text.x = element_text(angle = 25, hjust = 1))
-
-q1a=ggplot(reduced,aes(x=IfDevalue,y=Pleasant)) +
-  geom_boxplot(width = 0.6, alpha = 0.4, position = position_dodge(0.75),
-               outlier.alpha = 0) +
-  geom_jitter(aes(group=pair), position = pd, 
-              size = 1, alpha = 0.8) +
-  geom_line(aes(group=pair), position = pd, linewidth = 0.5, color = 'darkgray') +
-  facet_wrap(~StimLoc + Cond) +
-  labs(x = "", y = "Change of Pleasantness Ratings") + common +
-  theme(strip.background = element_blank(),
-        axis.text.x = element_text(angle = 25, hjust = 1))
-
-q2=ggplot(reduced,aes(x=IfDevalue,y=Pleasant)) +
-  geom_boxplot(width = 0.6, alpha = 0.4, position = position_dodge(0.75),
-               outlier.alpha = 0) +
-  geom_jitter(aes(group=pair), position = pd, 
-              size = 1, alpha = 0.8) +
-  geom_line(aes(group=pair), position = pd, linewidth = 0.5, color = 'darkgray') +
-  facet_wrap(~Sess) +
-  labs(x = "", y = "Change of Pleasantness Ratings") + common +
-  theme(strip.background = element_blank(),
-        axis.text.x = element_text(angle = 25, hjust = 1))
-
-q3=ggplot(reduced,aes(x=IfDevalue,y=Pleasant)) +
-  geom_line(aes(group=pair), position = pd, linewidth = 0.2, color = 'darkgray') +
-  geom_jitter(aes(group=pair), position = pd, 
-              size = 1, alpha = 0.8) +
-  geom_boxplot(width = 0.6, alpha = 0, position = position_dodge(0.75),
-               outlier.alpha = 0) +
-  labs(x = "", y = "Pleasantness Ratings (Post-Pre)") + common +
-  theme(strip.background = element_blank())
-
-pdf(file.path(FigDir,'PleasantChanges.pdf'),6,4)
-print(q1)
-print(q2)
-print(q1a)
-dev.off()
-
-# showing standardized values
-# consider using this in paper
-pdf(file.path(FigDir,'PleasantChanges_all_sessions.pdf'),4,5)
-print(q3)
-dev.off()
 
 # Fit the mixed-effects model
 model0 <- lmer(Pleasant ~ (1|SubID), data = reduced)
@@ -264,6 +175,17 @@ anova(model0,model3)
 summary(model3)
 anova(model0,model4)
 # devaluation effect was not modulated by Cond, Sess, DevaluedOdor, StimLoc
+
+
+# save the whole rating data for later use
+Odor_ratings_dat = dat
+save(Odor_ratings_dat,file = '../ProcessedData/Odor_ratings_dat.RData')
+
+# save this selective satiation index for later use
+SelectSate_dat = rereduced
+Sate_dat = reduced
+save(SelectSate_dat,Sate_dat,
+     file = '../ProcessedData/SelectSate_dat.RData')
 
 
 ################## below is not included in the paper #######################
@@ -328,15 +250,76 @@ pdf(file.path(FigDir,'Selective_satiation_effect_by_cond_day2.pdf'),7,4)
 print(p5)
 dev.off()
 
-# save the whole rating data for later use
-Odor_ratings_dat = dat
-save(Odor_ratings_dat,file = '../ProcessedData/Odor_ratings_dat.RData')
 
-# save this selective satiation index for later use
-SelectSate_dat = rereduced
-Sate_dat = reduced
-save(SelectSate_dat,Sate_dat,
-     file = '../ProcessedData/SelectSate_dat.RData')
+# a diff way to plot to show lines pre & post meal
+p=ggplot(dat,aes(x=PrePost,y=Pleasant,fill=PrePost)) +
+  geom_boxplot(width = 0.6, alpha = 0.4, outlier.alpha = 0) +
+  geom_line(aes(group=pair), position = pd, linewidth = 0.5, color = 'darkgray') +
+  geom_jitter(aes(color=PrePost,group=pair), position = pd, 
+              size = 1, alpha = 0.8) +
+  facet_wrap(~IfDevalue+Cond) +
+  labs(x = "", y = "Pleasantness Ratings") + common +
+  theme(strip.background = element_blank(),
+        legend.position = 'none')
+
+pdf(file.path(FigDir,'PleasantRatings_w_lines.pdf'),8,8)
+print(p)
+dev.off()
+
+
+q1=ggplot(reduced,aes(x=IfDevalue,y=Pleasant)) +
+  geom_boxplot(width = 0.6, alpha = 0.4, position = position_dodge(0.75),
+               outlier.alpha = 0) +
+  geom_jitter(aes(group=pair), position = pd, 
+              size = 1, alpha = 0.8) +
+  geom_line(aes(group=pair), position = pd, linewidth = 0.5, color = 'darkgray') +
+  facet_wrap(~Cond) +
+  labs(x = "", y = "Change of Pleasantness Ratings") + common +
+  theme(strip.background = element_blank(),
+        axis.text.x = element_text(angle = 25, hjust = 1))
+
+q1a=ggplot(reduced,aes(x=IfDevalue,y=Pleasant)) +
+  geom_boxplot(width = 0.6, alpha = 0.4, position = position_dodge(0.75),
+               outlier.alpha = 0) +
+  geom_jitter(aes(group=pair), position = pd, 
+              size = 1, alpha = 0.8) +
+  geom_line(aes(group=pair), position = pd, linewidth = 0.5, color = 'darkgray') +
+  facet_wrap(~StimLoc + Cond) +
+  labs(x = "", y = "Change of Pleasantness Ratings") + common +
+  theme(strip.background = element_blank(),
+        axis.text.x = element_text(angle = 25, hjust = 1))
+
+q2=ggplot(reduced,aes(x=IfDevalue,y=Pleasant)) +
+  geom_boxplot(width = 0.6, alpha = 0.4, position = position_dodge(0.75),
+               outlier.alpha = 0) +
+  geom_jitter(aes(group=pair), position = pd, 
+              size = 1, alpha = 0.8) +
+  geom_line(aes(group=pair), position = pd, linewidth = 0.5, color = 'darkgray') +
+  facet_wrap(~Sess) +
+  labs(x = "", y = "Change of Pleasantness Ratings") + common +
+  theme(strip.background = element_blank(),
+        axis.text.x = element_text(angle = 25, hjust = 1))
+
+q3=ggplot(reduced,aes(x=IfDevalue,y=Pleasant)) +
+  geom_line(aes(group=pair), position = pd, linewidth = 0.2, color = 'darkgray') +
+  geom_jitter(aes(group=pair), position = pd, 
+              size = 1, alpha = 0.8) +
+  geom_boxplot(width = 0.6, alpha = 0, position = position_dodge(0.75),
+               outlier.alpha = 0) +
+  labs(x = "", y = "Pleasantness Ratings (Post-Pre)") + common +
+  theme(strip.background = element_blank())
+
+pdf(file.path(FigDir,'PleasantChanges.pdf'),6,4)
+print(q1)
+print(q2)
+print(q1a)
+dev.off()
+
+# showing standardized values
+pdf(file.path(FigDir,'PleasantChanges_all_sessions.pdf'),4,5)
+print(q3)
+dev.off()
+
 
 
 

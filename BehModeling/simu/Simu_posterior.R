@@ -9,10 +9,10 @@ library(rjags)
 library(R2jags)
 library(plyr)
 library(tidyverse)
-source('../Scripts_R/Setup.R')
+source('../../Scripts_R_beh/Setup.R')
 
 # load data to use
-load(file = '../ProcessedData/Conditioning.RData') # this contains some NA trials
+load(file = '../../ProcessedData/Conditioning.RData') # this contains some NA trials
 use_dat = conditioning_dat  
 
 # prepare model inputs as vectors
@@ -153,7 +153,7 @@ df_acc = adply(df_acc, c(1,2,3,4))
 names(df_acc) = c(names(df_acc)[1:4],'acc')
 
 
-SubInfo = read.xlsx('../ProcessedData/SubConds.xlsx')
+SubInfo = read.xlsx('../../ProcessedData/SubConds.xlsx')
 SubInfo = subset(SubInfo,SubID %in% unique(use_dat$SubID)) %>%
   mutate(StimOrder=mapvalues(StimOrder,from=c('123','132','213','231','312','321'),
                              to=c('CS-SC-SS','CS-SS-SC','SC-CS-SS',
@@ -253,7 +253,7 @@ p2=conditioning_dat %>%
   common + theme(legend.position = c(0.85, 0.3))
 
 
-pdf(file.path(FigDir,'Conditioning_acc_obs_sim.pdf'),8,8)
+pdf(file.path(FigPaperDir,'Conditioning_acc_obs_sim.pdf'),8,8)
 ggarrange(p1,p2,nrow = 2)
 dev.off()
 
