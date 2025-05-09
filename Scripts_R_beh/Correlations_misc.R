@@ -15,10 +15,15 @@ load(file = file.path(pro_dat_dir,'SelectSate_dat.RData'))
 # (having checked rows are aligned)
 df_comb = cbind(summary_choice_corrected,
                 SelectSate_dat[,c('Devalued','Didx')])
+
 corr1=ggplot(df_comb,aes(x=Didx,y=ChoiceChangeAB)) +
-  geom_point() +
-  geom_smooth(method = rlm, se = TRUE, color = 'black',
-              linetype = 2) + common +
+  geom_point(aes(color=Cond,fill=Cond)) +
+  geom_smooth(method = rlm, se = TRUE, 
+              linetype = 2) + 
+  scale_color_manual(values = use.col.conds) +
+  scale_fill_manual(values = use.col.conds) +
+  stat_cor(method = 'pearson') +
+  common +
   labs(title = NULL,
        x = 'Selective satiation',
        y = 'Choice of sated odor (post - pre)')

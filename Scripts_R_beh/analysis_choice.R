@@ -104,171 +104,6 @@ summary_choice_corrected = summary_choice_ss %>%
          ChoiceChangeB=avg_changeB, # only B
          ChoiceBoverA=avg_BoverA) # B over A
 
-
-# an overall comparison across TMS conditions
-# for each of aOFC and pOFC subjects
-muh_grob <- rectGrob(
-  x=1:2, y=0, gp=gpar(color='black', fill=use.col.ap.ofc, alpha=1))
-s1=summary_choice_corrected %>%
-  ggplot(aes(x=StimLoc,y=ChoiceChangeAB)) +
-  geom_violin() +
-  geom_boxplot(width = 0.2, outlier.alpha = 0, alpha = 0.4) +
-  scale_color_manual(values = use.col.conds) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
-              size = 2, alpha = 0.8) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
-  annotate("text", x = 1, y = 0.5, label = "p = 0.024", size = 4, color = "black") + # aOFC significance
-  annotate("text", x = 2, y = 0.8, label = "p = 0.0023", size = 4, color = "black") +
-  labs(x = NULL, y = "Choice of sated odor \n (post - pre-meal)",
-       title = NULL) + 
-  common +
-  coord_cartesian(clip='off') +
-  theme(axis.text.x = element_text(margin=margin(t=10),color = 'white')) +
-  annotation_custom(
-     grob=muh_grob, xmin = 0, xmax = 1, ymin = -1.08, ymax= - 0.88
-  ) +
-  theme(legend.position = 'inside',
-    legend.position.inside = c(0.3,0.96),
-      legend.key.size = unit(0.28,'cm')) 
-
-pdf(file.path(FigPaperDir,'Day2_overall_ChoiceSatedOdor.pdf'),4,4)
-print(s1)
-dev.off()
-
-########### comparison b/t all three conditions ################
-# set A and B 
-cc1=summary_choice_corrected %>%
-  ggplot(aes(x=Cond,y=ChoiceChangeAB,fill=Cond)) +
-  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  facet_wrap(~StimLoc) +
-  scale_fill_manual(values = use.col.conds) +
-  scale_color_manual(values = use.col.conds) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
-              size = 1, alpha = 0.8) +
-  labs(x = "", title = 'Post(A & B) - Pre',
-       y = "Choice of Sated Odor") + common +
-  theme(legend.position = "none")
-
-# set B only
-cc2=summary_choice_corrected %>%
-  ggplot(aes(x=Cond,y=ChoiceChangeB,fill=Cond)) +
-  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  facet_wrap(~StimLoc) +
-  scale_fill_manual(values = use.col.conds) +
-  scale_color_manual(values = use.col.conds) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
-              size = 1, alpha = 0.8) +
-  labs(x = "", title = 'Post(B only) - Pre',
-       y = "Choice of Sated Odor") + common +
-  theme(legend.position = "none")
-
-# set A only
-cc3=summary_choice_corrected %>%
-  ggplot(aes(x=Cond,y=ChoiceChangeA,fill=Cond)) +
-  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  facet_wrap(~StimLoc) +
-  scale_fill_manual(values = use.col.conds) +
-  scale_color_manual(values = use.col.conds) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
-              size = 1, alpha = 0.8) +
-  labs(x = "", title = 'Post(A only) - Pre',
-       y = "Choice of Sated Odor") + common +
-  theme(legend.position = "none")
-
-########### plot focus on Day 2 TMS ################
-
-p_values <- data.frame(
-  StimLoc = c("aOFC", "pOFC"),  
-  p_value = c(0.977, 1.15e-3),     
-  y_start = c(0.74, 0.74),        
-  y_end = c(0.81, 0.81),
-  y_low = c(0.72, 0.72)
-)
-
-strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
-                     text_x = elem_list_text(color = 'white',
-                                             face = "bold",
-                                             size = 16))
-# both set A and B
-c1=summary_choice_corrected %>%
-  subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
-  ggplot(aes(x=Cond,y=ChoiceChangeAB,fill=Cond)) +
-  geom_line(aes(group=SubID), position = pd, linewidth = 0.5, color = 'darkgray') +
-  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
-              size = 2, alpha = 0.8) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
-  facet_wrap2(~StimLoc,scales = 'free',
-              strip = strip,
-              axes = 'all') +
-  geom_segment(
-    data = p_values,aes(x = 1, xend = 2, y = y_start, yend = y_start),
-    inherit.aes = FALSE, color = "black",linewidth = 0.5) +
-  geom_segment(
-    data = p_values,aes(x = 1, xend = 1, y = y_low, yend = y_start),
-    inherit.aes = FALSE, color = "black",linewidth = 0.5) +
-  geom_segment(
-    data = p_values,aes(x = 2, xend = 2, y = y_low, yend = y_start),
-    inherit.aes = FALSE, color = "black",linewidth = 0.5) +
-  geom_text(
-    data = p_values,
-    aes(
-      x = 1.5,         # Position the label between the two groups
-      y = y_end,     # Use the pre-calculated y position
-      label = paste0("p = ", p_value)
-    ),
-    inherit.aes = FALSE,
-    size = 3.5
-  ) +
-  annotate("text",x=1.5,y=0.9,label='Mixed-effects model:') +
-  scale_fill_manual(values = use.col.conds) +
-  scale_color_manual(values = use.col.conds) +
-  coord_cartesian(ylim = c(-0.8,0.9)) +
-  labs(x = NULL, title = NULL,
-       y = "Choice of sated odor\n (post - pre-meal)") + common +
-  theme(legend.position = "none")
-
-custom_labeller <- labeller(
-  StimOrder_day2 = label_value
-)
-
-strip = strip_themed(background_y = elem_list_rect(fill = use.col.ap.ofc),
-                     text_y = elem_list_text(color = 'white',
-                                             face = "bold",
-                                             size = 16))
-# based on c1
-# separated by diff stim orders of Day 2 TMS
-c2=summary_choice_corrected %>%
-  subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
-  ggplot(aes(x=Cond,y=ChoiceChangeAB,fill=Cond)) +
-  geom_line(aes(group=SubID), position = pd, linewidth = 0.5, color = 'darkgray') +
-  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, size = 2, alpha = 0.9) +
-  facet_grid2(rows = vars(StimLoc), 
-              cols = vars(StimOrder_day2), 
-              scales = 'fixed',
-              axes = 'all',
-              strip = strip,
-              labeller = custom_labeller) +
-  scale_fill_manual(values = use.col.conds) +
-  scale_color_manual(values = use.col.conds) +
-  labs(x = NULL, title = NULL, y = "Choice of sated odor\n (post - pre-meal)") + 
-  common + theme(legend.position = "none")
-
-pdf(file.path(FigDir,'ChoiceSatedOdor_Changes_all_conds.pdf'),8,7)
-print(cc1)
-print(cc2)
-print(cc3)
-dev.off()
-
-pdf(file.path(FigPaperDir,'Day2_TMS_ChoiceSatedOdor_Changes.pdf'),7,4)
-print(c1)
-dev.off()
-
-pdf(file.path(FigPaperDir,'Day2_TMS_ChoiceSatedOdor_Changes_by_order.pdf'),11,8)
-print(c2)
-dev.off()
-
 #######################################################
 ###  stat testing on Day 2 TMS effect
 # test using Post(A & B) - Pre, summarized choice data
@@ -300,6 +135,129 @@ value_Z1 = subset(summary_choice_corrected, Cond=='sham-sham'&
 wilcox.test(value_Y1,alternative = 'l') # lower than zero? n.s.
 wilcox.test(value_Z1,alternative = 'l') # lower than zero? n.s.
 wilcox.test(value_Y1,value_Z1,paired = T,alternative = 'g') # n.s
+
+# an overall comparison across TMS conditions
+# for each of aOFC and pOFC subjects
+muh_grob <- rectGrob(
+  x=1:2, y=0, gp=gpar(color='black', fill=use.col.ap.ofc, alpha=1))
+s1=summary_choice_corrected %>%
+  ggplot(aes(x=StimLoc,y=ChoiceChangeAB)) +
+  geom_violin() +
+  geom_boxplot(width = 0.2, outlier.alpha = 0, alpha = 0.4) +
+  scale_color_manual(values = use.col.conds) +
+  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
+              size = 2, alpha = 0.8) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
+  annotate("text", x = 1, y = 0.5, label = "p = 0.024", size = 4, color = "black") + # aOFC significance
+  annotate("text", x = 2, y = 0.8, label = "p = 0.0023", size = 4, color = "black") +
+  labs(x = NULL, y = "Choice of sated odor \n (post - pre-meal)",
+       title = NULL) + 
+  common +
+  coord_cartesian(clip='off') +
+  theme(axis.text.x = element_text(margin=margin(t=10),color = 'white')) +
+  annotation_custom(
+     grob=muh_grob, xmin = 0, xmax = 1, ymin = -1.08, ymax= - 0.88
+  ) +
+  theme(legend.position = 'inside',
+    legend.position.inside = c(0.3,0.96),
+      legend.key.size = unit(0.28,'cm')) 
+
+pdf(file.path(FigPaperDir,'Day2_overall_ChoiceSatedOdor.pdf'),4,4)
+print(s1)
+dev.off()
+
+
+
+########### plot focus on Day 2 TMS ################
+
+p_values <- data.frame(
+  StimLoc = c("aOFC", "pOFC"),  
+  p_value = c(0.655, 0.00034),     
+  y_start = c(0.74, 0.74),        
+  y_end = c(0.81, 0.81),
+  y_low = c(0.72, 0.72)
+)
+
+strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
+                     text_x = elem_list_text(color = 'white',
+                                             face = "bold",
+                                             size = 16))
+c1=summary_choice_corrected %>%
+  subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
+  ggplot(aes(x=Cond,y=ChoiceChangeAB,fill=Cond)) +
+  geom_line(aes(group=SubID), position = pd, linewidth = 0.5, color = 'darkgray') +
+  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
+  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
+              size = 2, alpha = 0.8) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
+  facet_wrap2(~StimLoc,scales = 'free',
+              strip = strip,
+              axes = 'all') +
+  geom_segment(
+    data = p_values,aes(x = 1, xend = 2, y = y_start, yend = y_start),
+    inherit.aes = FALSE, color = "black",linewidth = 0.5) +
+  geom_segment(
+    data = p_values,aes(x = 1, xend = 1, y = y_low, yend = y_start),
+    inherit.aes = FALSE, color = "black",linewidth = 0.5) +
+  geom_segment(
+    data = p_values,aes(x = 2, xend = 2, y = y_low, yend = y_start),
+    inherit.aes = FALSE, color = "black",linewidth = 0.5) +
+  geom_text(
+    data = p_values,
+    aes(
+      x = 1.5,         # Position the label between the two groups
+      y = y_end,     # Use the pre-calculated y position
+      label = paste0("p = ", p_value)
+    ),
+    inherit.aes = FALSE,
+    size = 3.5
+  ) +
+  annotate("text",x=1.5,y=0.9,label='Mixed-effects logistic model:') +
+  scale_fill_manual(values = use.col.conds) +
+  scale_color_manual(values = use.col.conds) +
+  coord_cartesian(ylim = c(-0.8,0.95)) +
+  labs(x = NULL, title = NULL,
+       y = "Choice of sated odor\n (post - pre-meal)") + common +
+  theme(legend.position = "none")
+
+custom_labeller <- labeller(
+  StimOrder_day2 = label_value
+)
+
+strip = strip_themed(background_y = elem_list_rect(fill = use.col.ap.ofc),
+                     text_y = elem_list_text(color = 'white',
+                                             face = "bold",
+                                             size = 16))
+# based on c1
+# separated by diff stim orders of Day 2 TMS
+c2=summary_choice_corrected %>%
+  subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
+  ggplot(aes(x=Cond,y=ChoiceChangeAB,fill=Cond)) +
+  geom_line(aes(group=SubID), position = pd, linewidth = 0.5, color = 'darkgray') +
+  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
+  geom_jitter(aes(color=Cond,group=SubID), position = pd, size = 2, alpha = 0.9) +
+  facet_grid2(rows = vars(StimLoc), 
+              cols = vars(StimOrder_day2), 
+              scales = 'fixed',
+              axes = 'all',
+              strip = strip,
+              labeller = custom_labeller) +
+  scale_fill_manual(values = use.col.conds) +
+  scale_color_manual(values = use.col.conds) +
+  labs(x = NULL, title = NULL, y = "Choice of sated odor\n (post - pre-meal)") + 
+  common + theme(legend.position = "none")
+
+
+
+pdf(file.path(FigPaperDir,'Day2_TMS_ChoiceSatedOdor_Changes.pdf'),7,4)
+print(c1)
+dev.off()
+
+pdf(file.path(FigPaperDir,'Day2_TMS_ChoiceSatedOdor_Changes_by_order.pdf'),11,8)
+print(c2)
+dev.off()
+
+
 
 #######################################################
 # testing Day 2 TMS effect at trial level
@@ -445,6 +403,55 @@ choice_dat_ss %>%
 
 
 
+
+###########. not used in paper
+
+########### comparison b/t all three conditions ################
+# set A and B 
+cc1=summary_choice_corrected %>%
+  ggplot(aes(x=Cond,y=ChoiceChangeAB,fill=Cond)) +
+  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
+  facet_wrap(~StimLoc) +
+  scale_fill_manual(values = use.col.conds) +
+  scale_color_manual(values = use.col.conds) +
+  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
+              size = 1, alpha = 0.8) +
+  labs(x = "", title = 'Post(A & B) - Pre',
+       y = "Choice of Sated Odor") + common +
+  theme(legend.position = "none")
+
+# set B only
+cc2=summary_choice_corrected %>%
+  ggplot(aes(x=Cond,y=ChoiceChangeB,fill=Cond)) +
+  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
+  facet_wrap(~StimLoc) +
+  scale_fill_manual(values = use.col.conds) +
+  scale_color_manual(values = use.col.conds) +
+  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
+              size = 1, alpha = 0.8) +
+  labs(x = "", title = 'Post(B only) - Pre',
+       y = "Choice of Sated Odor") + common +
+  theme(legend.position = "none")
+
+# set A only
+cc3=summary_choice_corrected %>%
+  ggplot(aes(x=Cond,y=ChoiceChangeA,fill=Cond)) +
+  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
+  facet_wrap(~StimLoc) +
+  scale_fill_manual(values = use.col.conds) +
+  scale_color_manual(values = use.col.conds) +
+  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
+              size = 1, alpha = 0.8) +
+  labs(x = "", title = 'Post(A only) - Pre',
+       y = "Choice of Sated Odor") + common +
+  theme(legend.position = "none")
+
+
+pdf(file.path(FigDir,'ChoiceSatedOdor_Changes_all_conds.pdf'),8,7)
+print(cc1)
+print(cc2)
+print(cc3)
+dev.off()
 
 
 
