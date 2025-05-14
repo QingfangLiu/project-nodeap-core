@@ -22,6 +22,7 @@ summary_choice_one = choice_dat_one %>%
   group_by(SubID,StimLoc,Cond,PrePost,OdorType) %>%
   reframe(Choice=mean(ChosenOdor,na.rm = T))
 
+# use choice data from odor-air to
 # create a session-wise measure of odor preference called 'pref':
 # preference of sated odor over non-sated odors (before eating meal)
 pre_choice_df = summary_choice_one %>%
@@ -39,8 +40,8 @@ save(pre_choice_df_sated_pref,
      file = '../ProcessedData/pre_choice_df_sated_pref_one_odor.RData')
 
 
+# collapsing across sessions
 c0=summary_choice_one %>%
-  subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
   ggplot(aes(x=OdorType,y=Choice)) +
   geom_boxplot(aes(linetype = PrePost),outlier.alpha = 0,
                alpha=0.4) +
@@ -55,16 +56,140 @@ c0=summary_choice_one %>%
   labs(x = NULL, title = NULL, y = "Choice of odor (vs. air)") + common +
   theme(legend.position = 'none')
 
-pdf(file.path(FigDir,'Day2_ChoiceOneOdor.pdf'),4,4)
+pdf(file.path(FigPaperDir,'Day2_ChoiceOneOdor.pdf'),4,4)
 print(c0)
 dev.off()
 
+# reduce the dataset by post - pre
+summary_choice_one_pre = subset(summary_choice_one,PrePost=='Pre')$Choice
+summary_choice_one_post = subset(summary_choice_one,PrePost=='Post')$Choice
+summary_choice_one_change = subset(summary_choice_one,PrePost=='Pre')
+summary_choice_one_change$Change = summary_choice_one_post - 
+                                   summary_choice_one_pre
+summary_choice_one_change$Choice = NULL
+summary_choice_one_change$PrePost = NULL
+
+# further reduce by sated - non-sated
+summary_choice_one_sated = subset(summary_choice_one_change,
+                                  OdorType=='sated')$Change
+summary_choice_one_nonsated = subset(summary_choice_one_change,
+                                     OdorType=='non-sated')$Change
+summary_choice_one_comp = subset(summary_choice_one_change,OdorType=='sated')
+summary_choice_one_comp$diff = summary_choice_one_sated - 
+  summary_choice_one_nonsated
+summary_choice_one_comp$OdorType = NULL
+summary_choice_one_comp$Change = NULL
+
+
+muh_grob <- grid::rectGrob(
+  x=1:2, y=0, gp=gpar(
+    color='black', 
+    fill=use.col.ap.ofc, 
+    alpha=1))
+
+strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
+                     text_x = elem_list_text(color = 'white',
+                                             face = "bold",
+                                             size = 16))
+
+c3=summary_choice_one_comp %>%
+  subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
+  ggplot(aes(x=Cond,y=diff,fill=Cond)) +
+  geom_line(aes(group=SubID), position = pd, linewidth = 0.2, color = 'darkgray') +
+  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
+  geom_jitter(aes(color=Cond,group=SubID), position = pd, size = 2, alpha = 0.8) +
+  facet_wrap2(~StimLoc,scales = 'free',
+              strip = strip,
+              axes = 'all') +
+  scale_color_manual(values = use.col.conds) +
+  scale_fill_manual(values = use.col.conds) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
+  coord_cartesian(ylim = c(-1, 1)) +
+  labs(x = NULL, title = NULL,
+       y = "Preference of sated odor\n (post - pre-meal)") + common +
+  theme(legend.position = "none") +
+  stat_compare_means(method = "wilcox.test", 
+                     paired = TRUE, 
+                     method.args = list(alternative='g'),
+                     label = "p")
+
+# here I used wilcox.test for p-value but need to update this
+pdf(file.path(FigPaperDir,'Day2TMS_ChoiceOneOdor_Pref_change.pdf'),7,4)
+print(c3)
+dev.off()
+
+# similar plot to look at Day 1 TMS effect
+c4 = summary_choice_one_comp %>%
+  subset(SubID != 'NODEAP_17') %>%
+  subset(Cond %in% c('sham-sham','cTBS-sham')) %>%
+  ggplot(aes(x=Cond,y=diff,fill=Cond)) +
+  geom_line(aes(group=SubID), position = pd, linewidth = 0.2, color = 'darkgray') +
+  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
+  geom_jitter(aes(color=Cond,group=SubID), position = pd, size = 2, alpha = 0.8) +
+  facet_wrap2(~StimLoc,scales = 'free',
+              strip = strip,
+              axes = 'all') +
+  scale_color_manual(values = use.col.conds) +
+  scale_fill_manual(values = use.col.conds) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
+  coord_cartesian(ylim = c(-1, 1)) +
+  labs(x = NULL, title = NULL,
+       y = "Preference of sated odor\n (post - pre-meal)") + common +
+  theme(legend.position = "none") +
+  stat_compare_means(method = "wilcox.test", 
+                     paired = TRUE, 
+                     method.args = list(alternative='g'),
+                     label = "p")
+
+pdf(file.path(FigPaperDir,'Day1TMS_ChoiceOneOdor_Pref_change.pdf'),7,4)
+print(c4)
+dev.off()
+
+
+#############################################################
+# go to trial level for stat testing
+# insert baseline odor preference value to the whole choice dat one df
+#############################################################
+
+choice_dat_one_w_base = choice_dat_one %>%
+  mutate(base=NA)
+for(i in 1:nrow(choice_dat_one_w_base)){
+  choice_dat_one_w_base$base[i] = pre_choice_df$base_one_odor[
+    pre_choice_df$SubID==choice_dat_one_w_base$SubID[i] &
+      pre_choice_df$Cond==choice_dat_one_w_base$Cond[i]]
+}
+
+# put aOFC and pOFC together 
+use.dat = subset(choice_dat_one_w_base, 
+                 PrePost=='Post' &
+                 StimLoc == 'pOFC' &
+                 Cond %in% c('sham-cTBS','sham-sham'))
+model_choice_0 <- glmer(ChosenOdor ~ base + OdorType + (1|SubID), 
+                        data = use.dat,family = 'binomial')
+model_choice_1 <- glmer(ChosenOdor ~ base + OdorType + Cond + (1|SubID), 
+                        data = use.dat,family = 'binomial')
+model_choice_2 <- glmer(ChosenOdor ~ base + OdorType * Cond + (1|SubID), 
+                        data = use.dat,family = 'binomial')
+
+summary(model_choice_0)
+anova(model_choice_0,model_choice_1)
+anova(model_choice_2,model_choice_1)
+anova(model_choice_2,model_choice_0)
+summary(model_choice_1)
+summary(model_choice_2)
+
+
+
+
+
+
+########## below is not in the papper 
 
 c1=summary_choice_one %>%
   subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
   ggplot(aes(x=OdorType,y=Choice)) +
   geom_boxplot(aes(linetype = PrePost),outlier.alpha = 0,
-    alpha=0.4) +
+               alpha=0.4) +
   geom_jitter(aes(shape = PrePost), 
               position = position_jitterdodge(
                 dodge.width = 0.6, 
@@ -79,15 +204,6 @@ c1=summary_choice_one %>%
 pdf(file.path(FigDir,'Day2TMS_ChoiceOneOdor.pdf'),8,4)
 print(c1)
 dev.off()
-
-
-summary_choice_one_pre = subset(summary_choice_one,PrePost=='Pre')$Choice
-summary_choice_one_post = subset(summary_choice_one,PrePost=='Post')$Choice
-summary_choice_one_change = subset(summary_choice_one,PrePost=='Pre')
-summary_choice_one_change$Change = summary_choice_one_post - 
-                                   summary_choice_one_pre
-summary_choice_one_change$Choice = NULL
-summary_choice_one_change$PrePost = NULL
 
 
 p_values <- data.frame(
@@ -146,81 +262,6 @@ summary_choice_one_change %>%
   theme(legend.position = "none") +
   stat_compare_means(method = "wilcox.test", paired = TRUE, label = "p")
 
-
-summary_choice_one_sated = subset(summary_choice_one_change,
-                                  OdorType=='sated')$Change
-summary_choice_one_nonsated = subset(summary_choice_one_change,
-                                     OdorType=='non-sated')$Change
-summary_choice_one_comp = subset(summary_choice_one_change,OdorType=='sated')
-summary_choice_one_comp$diff = summary_choice_one_sated - 
-  summary_choice_one_nonsated
-summary_choice_one_comp$OdorType = NULL
-summary_choice_one_comp$Change = NULL
-
-
-muh_grob <- grid::rectGrob(
-  x=1:2, y=0, gp=gpar(
-    color='black', fill=use.col.ap.ofc, alpha=1))
-
-strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
-                     text_x = elem_list_text(color = 'white',
-                                             face = "bold",
-                                             size = 16))
-
-c3=summary_choice_one_comp %>%
-  subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
-  ggplot(aes(x=Cond,y=diff,fill=Cond)) +
-  geom_line(aes(group=SubID), position = pd, linewidth = 0.2, color = 'darkgray') +
-  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, size = 2, alpha = 0.8) +
-  facet_wrap2(~StimLoc,scales = 'free',
-              strip = strip,
-              axes = 'all') +
-  scale_color_manual(values = use.col.conds) +
-  scale_fill_manual(values = use.col.conds) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
-  coord_cartesian(ylim = c(-1, 1)) +
-  labs(x = NULL, title = NULL,
-       y = "Preference of sated odor\n (post - pre-meal)") + common +
-  theme(legend.position = "none") +
-  stat_compare_means(method = "wilcox.test", 
-                     paired = TRUE, 
-                     method.args = list(alternative='g'),
-                     label = "p")
-
-pdf(file.path(FigPaperDir,'Day2TMS_ChoiceOneOdor_Pref_change.pdf'),7,4)
-print(c3)
-dev.off()
-
-# similar plot to look at Day 1 TMS effect
-c4 = summary_choice_one_comp %>%
-  subset(SubID != 'NODEAP_17') %>%
-  subset(Cond %in% c('sham-sham','cTBS-sham')) %>%
-  ggplot(aes(x=Cond,y=diff,fill=Cond)) +
-  geom_line(aes(group=SubID), position = pd, linewidth = 0.2, color = 'darkgray') +
-  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, size = 2, alpha = 0.8) +
-  facet_wrap2(~StimLoc,scales = 'free',
-              strip = strip,
-              axes = 'all') +
-  scale_color_manual(values = use.col.conds) +
-  scale_fill_manual(values = use.col.conds) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
-  coord_cartesian(ylim = c(-1, 1)) +
-  labs(x = NULL, title = NULL,
-       y = "Preference of sated odor\n (post - pre-meal)") + common +
-  theme(legend.position = "none") +
-  stat_compare_means(method = "wilcox.test", 
-                     paired = TRUE, 
-                     method.args = list(alternative='g'),
-                     label = "p")
-
-pdf(file.path(FigPaperDir,'Day1TMS_ChoiceOneOdor_Pref_change.pdf'),7,4)
-print(c4)
-dev.off()
-
-
-#############################
 
 # use the overall baseline measure to do some analysis
 load(file = '../ProcessedData/pre_choice_df_sated_pref_overall.RData')
@@ -302,8 +343,8 @@ t2=choice_df_sated_pref_change %>%
   geom_text(
     data = p_values,
     aes(x = 1.5,y = y_end,
-      label = paste0("p = ", format(p_value, scientific = FALSE))), 
-      inherit.aes = FALSE, size = 3.5) +
+        label = paste0("p = ", format(p_value, scientific = FALSE))), 
+    inherit.aes = FALSE, size = 3.5) +
   labs(x = NULL, y = "Preference of sated odor\n (post - pre-meal)", 
        title = NULL) + common +
   theme(legend.position = "none") 
@@ -312,37 +353,11 @@ pdf(file.path(FigDir,'Day2TMS_ChoiceOneOdor_Pref_change1.pdf'),7,4)
 print(t2)
 dev.off()
 
-#############################################################
-# go to trial level
-# insert this base value to the whole choice dat one df
-#############################################################
-
-choice_dat_one_w_base = choice_dat_one %>%
-  mutate(base=NA)
-for(i in 1:nrow(choice_dat_one_w_base)){
-  choice_dat_one_w_base$base[i] = pre_choice_df$base_one_odor[
-    pre_choice_df$SubID==choice_dat_one_w_base$SubID[i] &
-      pre_choice_df$Cond==choice_dat_one_w_base$Cond[i]]
-}
 
 
-# put aOFC and pOFC together 
-use.dat = subset(choice_dat_one_w_base, PrePost=='Post' &
-                   StimLoc == 'pOFC' &
-                   Cond %in% c('sham-cTBS','sham-sham'))
-model_choice_0 <- glmer(ChosenOdor ~ base + OdorType + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-model_choice_1 <- glmer(ChosenOdor ~ base + OdorType + Cond + (1|SubID), 
-                        data = use.dat,family = 'binomial')
-model_choice_2 <- glmer(ChosenOdor ~ base + OdorType * Cond + (1|SubID), 
-                        data = use.dat,family = 'binomial')
 
-summary(model_choice_0)
-anova(model_choice_0,model_choice_1)
-anova(model_choice_2,model_choice_1)
-anova(model_choice_2,model_choice_0)
-summary(model_choice_1)
-summary(model_choice_2)
+
+
 
 
 

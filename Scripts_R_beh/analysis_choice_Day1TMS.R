@@ -26,7 +26,6 @@ use_summ_dat = subset(summary_choice_corrected,
 
 #######################################################
 
-# collapsing across set A and B
 strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
                      text_x = elem_list_text(color = 'white',
                                              face = "bold",
@@ -53,7 +52,6 @@ summary_choice_corrected %>%
 
 #######################################################
 # stat testing Day 1 TMS effect at trial level
-# focus on pOFC stim
 #######################################################
 
 survey_dat = read.xlsx('../ProcessedData/Survey_uncomf_strong.xlsx') %>%
@@ -79,7 +77,6 @@ for(i in 1:nrow(use_trial_dat)){
 
 ###############################
 # on aOFC
-# it affects both set A and set B
 use_trial_dat = subset(choice_dat_ss_w_base, 
                        PrePost=='Post' &
                          StimLoc=='aOFC' & 
@@ -87,10 +84,7 @@ use_trial_dat = subset(choice_dat_ss_w_base,
 use_trial_dat = use_trial_dat %>%
   filter(complete.cases(.))
 
-
-########### plot Day 1 TMS ################
 ######## look at cTBS-sham & sham-sham comparison ###
-# look at set A and B separately
 ###############################
 
 # p values come from glmer models
@@ -119,15 +113,7 @@ strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
 
 
 
-pdf(file.path(FigDir,'Day1_TMS_ChoiceSatedOdor_Changes.pdf'),8,4)
-print(pp1)
-print(p3)
-print(p4)
-dev.off()
 
-pdf(file.path(FigDir,'Day1_TMS_ChoiceSatedOdor_by_order.pdf'),10,8)
-print(q1)
-dev.off()
 
 
 

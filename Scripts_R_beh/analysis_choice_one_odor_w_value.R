@@ -1,11 +1,11 @@
 
+# this analyzes choices with only one odor
+# w/ considering value
+
 rm(list = ls())
 source('Setup.R')
 
 #######################################
-
-# this analyzes choices with only one odor
-# w/ considering value
 
 load(file = '../ProcessedData/choice_dat.RData')
 
@@ -15,6 +15,7 @@ choice_dat_one_odor = choice_dat %>%
   mutate(ChoiceType=mapvalues(ChoiceType,from=c(1,2),to=c('W','A'))) %>%
   mutate(OdorType=ifelse(ChoiceType==Devalued,'sated','non-sated'))
 
+# load the mapping data from cue to ?
 load(file = '../ProcessedData/conditioning_cue_mapping.RData')
 df_w = read.csv(file = '../BehModeling/df_w_per_sub_sess_cuepair.csv')
 

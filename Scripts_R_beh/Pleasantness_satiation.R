@@ -93,6 +93,10 @@ p3=ggplot(dat,aes(x=IfDevalue,y=Pleasant)) +
                                               jitter.width = 0.2), 
               size = 1.5, alpha = 0.4) +
   scale_shape_manual(values = c(17, 1)) +
+  annotate("segment", x = 1, xend = 1, y = 9.8, yend = 10.5) +
+  annotate("segment", x = 2, xend = 2, y = 9.8, yend = 10.5) +
+  annotate("segment", x = 1, xend = 2, y = 10.5, yend = 10.5) +
+  annotate("text", x = 1.5, y = 11.3, label = "p = 2.75e-13", size = 4) +
   labs(x = NULL, y = "Odor pleasantness", title = NULL) + common +
   theme(legend.position = c(0.25, 0.15)) 
 
@@ -100,7 +104,7 @@ pdf(file.path(FigPaperDir,'PleasantRatings_comp.pdf'),8,12)
 ggarrange(p1,p2,nrow = 2)
 dev.off()
 
-pdf(file.path(FigPaperDir,'PleasantRatings.pdf'),4,4)
+pdf(file.path(FigPaperDir,'PleasantRatings_main.pdf'),4,4)
 print(p3)
 dev.off()
 
