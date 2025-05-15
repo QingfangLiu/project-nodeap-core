@@ -17,14 +17,12 @@ choice_dat_one = choice_dat %>%
   mutate(ChoiceType=mapvalues(ChoiceType,from=c(1,2),to=c('W','A'))) %>%
   mutate(OdorType=ifelse(ChoiceType==Devalued,'sated','non-sated'))
 
-# focus on Day 2 TMS effect
 summary_choice_one = choice_dat_one %>%
   group_by(SubID,StimLoc,Cond,PrePost,OdorType) %>%
   reframe(Choice=mean(ChosenOdor,na.rm = T))
 
-# use choice data from odor-air to
 # create a session-wise measure of odor preference called 'pref':
-# preference of sated odor over non-sated odors (before eating meal)
+# preference of sated over non-sated odors (before eating meal)
 pre_choice_df = summary_choice_one %>%
   subset(PrePost=='Pre') %>%
   group_by(SubID,Cond,OdorType) %>%
@@ -41,7 +39,7 @@ save(pre_choice_df_sated_pref,
 
 
 # collapsing across sessions
-c0=summary_choice_one %>%
+c0 = summary_choice_one %>%
   ggplot(aes(x=OdorType,y=Choice)) +
   geom_boxplot(aes(linetype = PrePost),outlier.alpha = 0,
                alpha=0.4) +
@@ -53,12 +51,37 @@ c0=summary_choice_one %>%
               size = 2, alpha = 0.8) +
   geom_hline(yintercept = 0.5, linetype = "dotted", color = "black") + 
   scale_shape_manual(values = c(17, 1)) +
+  annotate('text',x=1.5,y=1.15,label='p=1.187e-6') +
+  annotate('segment',x=1,y=1.1,xend=2,yend=1.1) +
+  annotate('segment',x=1,y=1.05,xend=1,yend=1.1) +
+  annotate('segment',x=2,y=1.05,xend=2,yend=1.1) +
   labs(x = NULL, title = NULL, y = "Choice of odor (vs. air)") + common +
   theme(legend.position = 'none')
 
 pdf(file.path(FigPaperDir,'Day2_ChoiceOneOdor.pdf'),4,4)
 print(c0)
 dev.off()
+
+
+# use trial-level data 
+# test: if less odor choices with sated odor
+model_choice_0 <- glmer(ChosenOdor ~ (1|SubID), 
+                        data = choice_dat_one,family = 'binomial')
+model_choice_1 <- glmer(ChosenOdor ~ PrePost + (1|SubID), 
+                        data = choice_dat_one,family = 'binomial')
+model_choice_2 <- glmer(ChosenOdor ~ PrePost * OdorType + (1|SubID), 
+                        data = choice_dat_one,family = 'binomial')
+
+# choice change from pre to post meal?
+anova(model_choice_0,model_choice_1)
+summary(model_choice_1)
+
+# does odor type (sated vs non-sated) affect choice change?
+anova(model_choice_1,model_choice_2)
+summary(model_choice_1)
+summary(model_choice_2)
+
+
 
 # reduce the dataset by post - pre
 summary_choice_one_pre = subset(summary_choice_one,PrePost=='Pre')$Choice
@@ -68,6 +91,7 @@ summary_choice_one_change$Change = summary_choice_one_post -
                                    summary_choice_one_pre
 summary_choice_one_change$Choice = NULL
 summary_choice_one_change$PrePost = NULL
+
 
 # further reduce by sated - non-sated
 summary_choice_one_sated = subset(summary_choice_one_change,
@@ -82,15 +106,9 @@ summary_choice_one_comp$Change = NULL
 
 
 muh_grob <- grid::rectGrob(
-  x=1:2, y=0, gp=gpar(
-    color='black', 
-    fill=use.col.ap.ofc, 
-    alpha=1))
-
+  x=1:2, y=0, gp=gpar(color='black', fill=use.col.ap.ofc, alpha=1))
 strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
-                     text_x = elem_list_text(color = 'white',
-                                             face = "bold",
-                                             size = 16))
+                     text_x = elem_list_text(color = 'white',face = "bold",size = 16))
 
 c3=summary_choice_one_comp %>%
   subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
@@ -151,18 +169,23 @@ dev.off()
 # insert baseline odor preference value to the whole choice dat one df
 #############################################################
 
-choice_dat_one_w_base = choice_dat_one %>%
-  mutate(base=NA)
+## very chaotic results
+# should also include the estimated value into the regression to be 
+# consistent with savory-sweet choices
+
+choice_dat_one_w_base = choice_dat_one %>% mutate(base=NA)
 for(i in 1:nrow(choice_dat_one_w_base)){
-  choice_dat_one_w_base$base[i] = pre_choice_df$base_one_odor[
-    pre_choice_df$SubID==choice_dat_one_w_base$SubID[i] &
-      pre_choice_df$Cond==choice_dat_one_w_base$Cond[i]]
+  choice_dat_one_w_base$base[i] = pre_choice_df_sated_pref$pref[
+    pre_choice_df_sated_pref$SubID==choice_dat_one_w_base$SubID[i] &
+      pre_choice_df_sated_pref$Cond==choice_dat_one_w_base$Cond[i]]
 }
 
-# put aOFC and pOFC together 
+# save this for later use
+save(choice_dat_one_w_base,file = '../ProcessedData/choice_dat_one_w_base_values.RData')
+
+
 use.dat = subset(choice_dat_one_w_base, 
-                 PrePost=='Post' &
-                 StimLoc == 'pOFC' &
+                 PrePost=='Post' & StimLoc == 'aOFC' &
                  Cond %in% c('sham-cTBS','sham-sham'))
 model_choice_0 <- glmer(ChosenOdor ~ base + OdorType + (1|SubID), 
                         data = use.dat,family = 'binomial')
@@ -178,6 +201,17 @@ anova(model_choice_2,model_choice_0)
 summary(model_choice_1)
 summary(model_choice_2)
 
+
+use.dat = subset(choice_dat_one_w_base, 
+                 OdorType == 'sated' &
+                   PrePost=='Post' & StimLoc == 'pOFC' &
+                   Cond %in% c('sham-cTBS','sham-sham'))
+model_choice_0 <- glmer(ChosenOdor ~ base + (1|SubID), 
+                        data = use.dat,family = 'binomial')
+model_choice_1 <- glmer(ChosenOdor ~ base + Cond + (1|SubID), 
+                        data = use.dat,family = 'binomial')
+anova(model_choice_0,model_choice_1)
+summary(model_choice_1)
 
 
 

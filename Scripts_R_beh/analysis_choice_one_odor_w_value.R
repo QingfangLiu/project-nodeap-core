@@ -1,19 +1,19 @@
 
 # this analyzes choices with only one odor
-# w/ considering value
+# w/ considering value estimates
 
 rm(list = ls())
 source('Setup.R')
 
 #######################################
 
-load(file = '../ProcessedData/choice_dat.RData')
+# load choice data (one odor vs clean air)
+# already included basedline pref from pre-meal
+load(file = '../ProcessedData/choice_dat_one_w_base_values.RData')
 
-choice_dat_one_odor = choice_dat %>%
+choice_dat_one_odor = choice_dat_one_w_base %>%
   subset(SubID != 'NODEAP_17') %>% # this has weird thing when trying to find cue id
-  subset(PrePost=='Post' & ChoiceType<3) %>%
-  mutate(ChoiceType=mapvalues(ChoiceType,from=c(1,2),to=c('W','A'))) %>%
-  mutate(OdorType=ifelse(ChoiceType==Devalued,'sated','non-sated'))
+  subset(PrePost=='Post')
 
 # load the mapping data from cue to ?
 load(file = '../ProcessedData/conditioning_cue_mapping.RData')
@@ -40,5 +40,33 @@ for(i in 1:nrow(choice_dat_one_odor)){
   w = find_ws(curr_dat$SubID,curr_dat$Sess,Cue_id_conditioning)
   choice_dat_one_odor$ValueOdorCue[i] = w
 }
+
+# look for day 2 TMS effect
+use.dat = subset(choice_dat_one_odor, 
+                 #OdorType == 'sated' &
+                   StimLoc == 'aOFC' & 
+                   Cond %in% c('sham-cTBS','sham-sham'))
+model_choice_0 <- glmer(ChosenOdor ~ ValueOdorCue + base + OdorType + (1|SubID), 
+                        data = use.dat,family = 'binomial')
+model_choice_1 <- glmer(ChosenOdor ~ ValueOdorCue + base + OdorType + Cond + (1|SubID), 
+                        data = use.dat,family = 'binomial')
+summary(model_choice_0)
+anova(model_choice_0,model_choice_1)
+summary(model_choice_1)
+
+
+# look for day 1 TMS effect
+use.dat = subset(choice_dat_one_odor, 
+                   #OdorType == 'sated' &
+                   StimLoc == 'pOFC' & 
+                   Cond %in% c('cTBS-sham','sham-sham'))
+model_choice_0 <- glmer(ChosenOdor ~ ValueOdorCue + base + OdorType + (1|SubID), 
+                        data = use.dat,family = 'binomial')
+model_choice_1 <- glmer(ChosenOdor ~ ValueOdorCue + base + OdorType + Cond + (1|SubID), 
+                        data = use.dat,family = 'binomial')
+
+summary(model_choice_0)
+anova(model_choice_0,model_choice_1)
+summary(model_choice_1)
 
 
