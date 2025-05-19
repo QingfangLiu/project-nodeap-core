@@ -247,8 +247,6 @@ c2=summary_choice_corrected %>%
   labs(x = NULL, title = NULL, y = "Choice of sated odor\n (post - pre-meal)") + 
   common + theme(legend.position = "none")
 
-
-
 pdf(file.path(FigPaperDir,'Day2_TMS_ChoiceSatedOdor_Changes.pdf'),7,4)
 print(c1)
 dev.off()
