@@ -4,7 +4,7 @@
 # based on the stimulation location
 
 rm(list = ls())
-source('Setup.R')
+source('../Scripts_R_beh/Setup.R')
 
 SubInfo = read.xlsx('../ProcessedData/SubConds.xlsx')
 Subs = SubInfo$SubID[SubInfo$Include==1]
@@ -212,6 +212,10 @@ pp=summary_convals %>%
               position = position_dodge(0.2)) +
   facet_wrap2(~Stim,axes = 'all',strip = strip) + 
   labs(y='Functional connectivity (a.u.)',x=NULL,title=NULL) +
+  annotate("text", x=1.5, y=15.8, label='***') +
+  annotate("segment",x = 1, xend = 1, y = 15.5, yend = 15) +
+  annotate("segment",x = 2, xend = 2, y = 15.5, yend = 15) +
+  annotate("segment",x = 1, xend = 2, y = 15.5, yend = 15.5) +
   common +
   coord_cartesian(clip='off') +
   theme(strip.background = element_blank(),
@@ -238,7 +242,7 @@ sum(pSeedpStim > aSeedpStim)
 length(pSeedpStim)
 wilcox.test(pSeedpStim,aSeedpStim,paired = T,alternative = 't')
 
-pdf(file.path(FigDir,'Fig_conn_seed_stim_sessions_paper.pdf'),7,4)
+pdf(file.path(FigPaperDir,'Fig_conn_seed_stim_sessions_paper.pdf'),7,4)
 print(pp)
 dev.off()
   

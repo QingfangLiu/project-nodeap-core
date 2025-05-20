@@ -148,8 +148,8 @@ s1=summary_choice_corrected %>%
   geom_jitter(aes(color=Cond,group=SubID), position = pd, 
               size = 2, alpha = 0.8) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
-  annotate("text", x = 1, y = 0.5, label = "p = 0.024", size = 4, color = "black") + # aOFC significance
-  annotate("text", x = 2, y = 0.8, label = "p = 0.0023", size = 4, color = "black") +
+  annotate("text", x = 1, y = 0.45, label = "*", size = 4, color = "black") + # aOFC significance
+  annotate("text", x = 2, y = 0.75, label = "***", size = 4, color = "black") +
   labs(x = NULL, y = "Choice of sated odor \n (post - pre-meal)",
        title = NULL) + 
   common +

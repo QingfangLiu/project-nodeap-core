@@ -29,11 +29,11 @@ for(i in 1:nrow(choice_dat_ss_w_base)){
 
 ################## Day 2 TMS effect ##################
 
-# focus on pOFC
+# pOFC group
 use.dat.pOFC = choice_dat_ss_w_base %>%
                   subset(PrePost=='Post' & 
-                   StimLoc=='pOFC' & 
-                     Cond %in% c('sham-cTBS','sham-sham')) %>%
+                         StimLoc=='pOFC' & 
+                         Cond %in% c('sham-cTBS','sham-sham')) %>%
                   filter(complete.cases(.)) 
 
 model_choice_1 <- glmer(Choice ~ Cond + ValueDiff + Didx +
@@ -48,13 +48,12 @@ summary(model_choice_1)
 
 use.dat.pOFC$fitted_choice <- fitted(model_choice_1, type = "response")
 
-
-# focus on aOFC
+# aOFC group
 use.dat.aOFC = choice_dat_ss_w_base %>%
                 subset(PrePost=='Post' & 
-                   StimLoc=='aOFC' & 
-                     Cond %in% c('sham-cTBS','sham-sham')) %>%
-              filter(complete.cases(.)) 
+                       StimLoc=='aOFC' & 
+                       Cond %in% c('sham-cTBS','sham-sham')) %>%
+                filter(complete.cases(.)) 
 model_choice_1 <- glmer(Choice ~ Cond + ValueDiff + Didx +
                           base + (1|SubID), 
                         data = use.dat.aOFC,family = 'binomial')
@@ -66,8 +65,6 @@ summary(model_choice_0)
 # everything else sig: Valuediff, Didx, base
 
 use.dat.aOFC$fitted_choice <- fitted(model_choice_0, type = "response")
-
-
 
 summary_choice_ss_fitted_pOFC = use.dat.pOFC %>%
   group_by(SubID,StimLoc,Cond,Sess) %>%
@@ -87,9 +84,7 @@ p_values <- data.frame(
 )
 
 strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
-                     text_x = elem_list_text(color = 'white',
-                                             face = "bold",
-                                             size = 16))
+         text_x = elem_list_text(color = 'white',face = "bold",size = 16))
 
 c2 = summary_choice_ss_fitted %>%
   ggplot(aes(x=Cond,y=avg_fitted_post_meal)) +
@@ -130,8 +125,10 @@ print(c2)
 dev.off()
 
 # put aOFC and pOFC together 
-use.dat = subset(choice_dat_ss_w_base, PrePost=='Post' &
-                   Cond %in% c('sham-cTBS','sham-sham'))
+use.dat = choice_dat_ss_w_base %>%
+                   subset(PrePost=='Post' &
+                   Cond %in% c('sham-cTBS','sham-sham')) %>%
+                   filter(complete.cases(.)) 
 model_choice_2 <- glmer(Choice ~ StimLoc * Cond + Didx +
                           ValueDiff + base + (1|SubID), 
                         data = use.dat,family = 'binomial')
@@ -147,13 +144,32 @@ anova(model_choice_2,model_choice_0)
 summary(model_choice_2)
 # sig: TMS&Loc interaction, Didx, ValueDiff, base
 
+# tried plotting use the interaction model
+use.dat$fitted_choice <- fitted(model_choice_2, type = "response")
+summary_choice_ss_fitted = use.dat %>%
+  group_by(SubID,StimLoc,Cond,Sess) %>%
+  reframe(avg_fitted_post_meal=mean(fitted_choice,na.rm = T)) 
 
-###### then how about Day 1 TMS effect? ##############
+summary_choice_ss_fitted %>%
+  ggplot(aes(x=Cond,y=avg_fitted_post_meal)) +
+  geom_line(aes(group=SubID), position = pd, linewidth = 0.5, color = 'darkgray') +
+  #geom_boxplot(aes(fill=Cond),width = 0.6, outlier.alpha = 0, alpha = 0.4) +
+  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
+              size = 2, alpha = 0.8) +
+  facet_wrap2(~StimLoc,scales = 'free',strip = strip) +
+  scale_color_manual(values = use.col.conds) +
+  scale_fill_manual(values = use.col.conds) + common 
+
+
+############# end of Day 2 TMS effect ##################
+
+#############  Day 1 TMS effect ##############
+
+# pOFC subjects
 # note NODEAP_17 is a posterior cTBS subject
 # with only sess 1 (sham-cTBS) and 3 (sham-sham) so remove this
 # when analyzing day 1 TMS effect
 
-# pOFC subjects
 use_trial_dat_pOFC = choice_dat_ss_w_base %>%
                   subset((!SubID=='NODEAP_17') &
                          PrePost=='Post' &
@@ -181,16 +197,8 @@ summary(model_choice_2)
 # Didx, Sess not sig
 anova(model_choice_2,model_choice_0) # sess was not sig, p=0.14
 
-# removing Didx
-model_choice_4 <- glmer(Choice ~ ValueDiff + base + (1|SubID), 
-                        data = use_trial_dat_pOFC,family = 'binomial')
-model_choice_5 <- glmer(Choice ~ Cond + ValueDiff + base + (1|SubID), 
-                        data = use_trial_dat_pOFC,family = 'binomial')
-anova(model_choice_4,model_choice_5) # no effect of TMS, p=0.129
-summary(model_choice_4)
-
-predictions <- ggpredict(model_choice_5, terms = c("Cond"))
-use_trial_dat_pOFC$fitted_choice <- fitted(model_choice_5, type = "response")
+predictions <- ggpredict(model_choice_3, terms = c("Cond"))
+use_trial_dat_pOFC$fitted_choice <- fitted(model_choice_3, type = "response")
 
 p_pOFC = ggplot(predictions, aes(x = x, y = predicted)) +
   geom_point(size = 3) +
@@ -204,13 +212,9 @@ p_pOFC = ggplot(predictions, aes(x = x, y = predicted)) +
   common
 
 
-
-
-
 # aOFC subjects
 use_trial_dat_aOFC = choice_dat_ss_w_base %>%
-  subset(PrePost=='Post' &
-           StimLoc=='aOFC' & 
+  subset(PrePost=='Post' & StimLoc=='aOFC' &
            Cond %in% c('cTBS-sham','sham-sham')) %>%
   mutate(CuePair=factor(CuePair)) %>%
   filter(complete.cases(.))   # remove all NA trials
@@ -250,10 +254,7 @@ ggarrange(p_aOFC,p_pOFC)
 dev.off()
 
 
-# try something different for plotting
 # calculate session-wise summary of choices
-# post-meal 
-
 summary_choice_ss_fitted_pOFC = use_trial_dat_pOFC %>%
   group_by(SubID,StimLoc,Cond,Sess) %>%
   reframe(avg_fitted_post_meal=mean(fitted_choice,na.rm = T)) 

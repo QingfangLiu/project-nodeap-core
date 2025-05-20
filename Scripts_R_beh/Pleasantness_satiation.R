@@ -3,8 +3,6 @@ rm(list = ls())
 source('Setup.R')
 
 # This code looks at devaluation effect
-# 9.27.24: major changes:
-# add the abnormal NODEAP_17 into this dataset
 # standarize ratings before stat testing & more comparisons
 
 ###############################
@@ -96,7 +94,7 @@ p3=ggplot(dat,aes(x=IfDevalue,y=Pleasant)) +
   annotate("segment", x = 1, xend = 1, y = 9.8, yend = 10.5) +
   annotate("segment", x = 2, xend = 2, y = 9.8, yend = 10.5) +
   annotate("segment", x = 1, xend = 2, y = 10.5, yend = 10.5) +
-  annotate("text", x = 1.5, y = 11.3, label = "p = 2.75e-13", size = 4) +
+  annotate("text", x = 1.5, y = 11.3, label = "***", size = 4) +
   labs(x = NULL, y = "Odor pleasantness", title = NULL) + common +
   theme(legend.position = c(0.25, 0.15)) 
 

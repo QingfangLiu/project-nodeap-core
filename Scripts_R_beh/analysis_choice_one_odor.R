@@ -51,7 +51,7 @@ c0 = summary_choice_one %>%
               size = 2, alpha = 0.8) +
   geom_hline(yintercept = 0.5, linetype = "dotted", color = "black") + 
   scale_shape_manual(values = c(17, 1)) +
-  annotate('text',x=1.5,y=1.15,label='p=1.187e-6') +
+  annotate('text',x=1.5,y=1.15,label='***') +
   annotate('segment',x=1,y=1.1,xend=2,yend=1.1) +
   annotate('segment',x=1,y=1.05,xend=1,yend=1.1) +
   annotate('segment',x=2,y=1.05,xend=2,yend=1.1) +
