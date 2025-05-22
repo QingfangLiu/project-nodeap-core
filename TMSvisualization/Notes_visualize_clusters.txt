@@ -1,0 +1,5 @@
+Visualize functional connectivity clusters:
+
+Overlay two nifti files
+Both range 0.19-0.3
+Color: warm, magenta

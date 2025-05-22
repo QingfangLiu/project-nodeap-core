@@ -177,60 +177,6 @@ anova(model_conditioning_4,model_conditioning_5)
 anova(model_conditioning_3,model_conditioning_5)
 summary(model_conditioning_5)
 
-# any difference from savory vs sweet odors?
-conditioning_dat %>%
-  group_by(SubID,Run,Cond,ChoiceType) %>%
-  reframe(Choice=mean(OdorChosen,na.rm = T)) %>%
-  ggplot(aes(x = Run, y = Choice, color = Cond, fill = Cond)) +
-  scale_color_manual(values = use.col.conds) +
-  scale_fill_manual(values = use.col.conds) +
-  facet_wrap(~ChoiceType) +
-  stat_summary(fun = mean, geom = "line", linewidth = 1) +  
-  stat_summary(fun.data = "mean_se", linewidth = 0,
-               geom = "ribbon", alpha = 0.3) +
-  labs(x = "Runs", y = "P(Choosing Odors)", 
-       color = "", fill = "") +
-  common
-
-model_conditioning_6 <- glmer(OdorChosen ~ Run * Cond + ChoiceType + (1|SubID), 
-                              data = conditioning_dat,family = 'binomial')
-anova(model_conditioning_6,model_conditioning_3)
-# lack of ChoiceType main effect
-# no need to add ChoiceType
-
-# any difference from two sets?
-conditioning_dat %>%
-  group_by(SubID,Run,Cond,Set) %>%
-  reframe(Choice=mean(OdorChosen,na.rm = T)) %>%
-  ggplot(aes(x = Run, y = Choice, color = Cond, fill = Cond)) +
-  facet_wrap(~Set) +
-  scale_color_manual(values = use.col.conds) +
-  scale_fill_manual(values = use.col.conds) +
-  stat_summary(fun = mean, geom = "line", linewidth = 1) + 
-  stat_summary(fun.data = "mean_se", 
-               geom = "ribbon", alpha = 0.3) +  
-  labs(x = "Runs", y = "P(Choosing Odors)", 
-       color = "", fill = "") +
-  common
-
-model_conditioning_7 <- glmer(OdorChosen ~ Run * Cond + Set + (1|SubID), 
-                              data = conditioning_dat,family = 'binomial')
-anova(model_conditioning_7,model_conditioning_3)
-# lack of Set main effect
-# no need to add Set
-
-# put Set and StimLoc factorially
-conditioning_dat %>%
-  group_by(SubID,Run,Cond,Set,StimLoc) %>%
-  reframe(Choice=mean(OdorChosen,na.rm = T)) %>%
-  ggplot(aes(x = Run, y = Choice, color = Cond)) +
-  facet_wrap(~Set + StimLoc) +
-  scale_color_manual(values = use.col.conds) +
-  stat_summary(fun = mean, geom = "line", size = 1, na.rm = T) +  # Average line
-  stat_summary(fun.data = "mean_se", na.rm = T, show.legend = F,
-               geom = "ribbon", alpha = 0.3) +
-  labs(x = "Runs", y = "Choosing Odors", color = "") +
-  common
 
 ####################################
 # focus on cond_day1: cTBS vs sham
@@ -354,27 +300,6 @@ summary(model_conditioning_aOFC_1)
 anova(model_conditioning_aOFC_1,model_conditioning_aOFC_3) # add quadratic term helps
 summary(model_conditioning_aOFC_3)
 anova(model_conditioning_aOFC_4,model_conditioning_aOFC_3) 
-
-
-
-
-############################################################
-# diff way to calculate se (across all trials & subjects)
-# does it make sense to do so?
-summary_data <- use.dat %>%
-  group_by(Run, Cond_day1) %>%
-  summarize(actual_choice = mean(OdorChosen),
-            se_choice = sd(OdorChosen) / sqrt(n()))
-ggplot(summary_data,aes(x = Run, color = Cond_day1)) +
-  scale_color_manual(values = use.col.conds.day1) +
-  geom_line(aes(y = actual_choice, color = Cond_day1)) +
-  geom_point(aes(y = actual_choice, color = Cond_day1), size = 3) +
-  geom_errorbar(aes(ymin = actual_choice - se_choice, 
-                    ymax = actual_choice + se_choice, color = Cond_day1), width = 0.2) +
-  labs(x = "Runs", y = "Choosing stimuli predicting odors", 
-       color = "Day1 TMS") +
-  common +
-  theme(legend.position = c(0.85,0.3))
 
 
 conditioning_dat$Cond_day1_StimLoc <- interaction(conditioning_dat$Cond_day1, conditioning_dat$StimLoc)
@@ -567,6 +492,34 @@ dev.off()
 
 pdf(file.path(FigDir,'Conditioning_error_bar.pdf'),7,4)
 print(pp2a)
+dev.off()
+
+
+# plot overall learning trend of each aOFC and pOFC group
+
+strip <- strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
+                      text_x = elem_list_text(color = 'white',
+                                              face = "bold",
+                                              size = 16))
+
+disc_overall = conditioning_dat %>%
+  group_by(SubID,Run,StimLoc) %>%
+  reframe(Choice=mean(OdorChosen,na.rm = T)) %>%
+  ggplot(aes(x = Run, y = Choice)) +
+  stat_summary(fun = mean, geom = "line", linewidth = 1) +
+  stat_summary(fun.data = "mean_se", linewidth = 1, 
+               show.legend = F, width = 0.3,
+               geom = "errorbar") +  
+  facet_wrap2(~StimLoc,scales = 'free_y',strip = strip) +
+  labs(x = "Runs", y = "P (Choosing rewarding stim)", 
+       title = NULL,
+       color = "Day1 TMS") +
+  coord_cartesian(ylim = c(0.5, 1)) +
+  common + theme(legend.position = c(0.85, 0.3)) 
+
+
+pdf(file.path(FigPaperDir,'Conditioning_overall.pdf'),8,4)
+print(disc_overall)
 dev.off()
 
 ############ check RT 
