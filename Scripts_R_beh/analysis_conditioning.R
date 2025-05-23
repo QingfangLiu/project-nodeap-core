@@ -502,20 +502,22 @@ strip <- strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
                                               face = "bold",
                                               size = 16))
 
-disc_overall = conditioning_dat %>%
-  group_by(SubID,Run,StimLoc) %>%
-  reframe(Choice=mean(OdorChosen,na.rm = T)) %>%
-  ggplot(aes(x = Run, y = Choice)) +
-  stat_summary(fun = mean, geom = "line", linewidth = 1) +
-  stat_summary(fun.data = "mean_se", linewidth = 1, 
-               show.legend = F, width = 0.3,
-               geom = "errorbar") +  
-  facet_wrap2(~StimLoc,scales = 'free_y',strip = strip) +
-  labs(x = "Runs", y = "P (Choosing rewarding stim)", 
-       title = NULL,
-       color = "Day1 TMS") +
-  coord_cartesian(ylim = c(0.5, 1)) +
-  common + theme(legend.position = c(0.85, 0.3)) 
+# Summarize within-subject means
+subject_means <- conditioning_dat %>%
+  group_by(SubID, Run, StimLoc) %>%
+  summarise(Choice = mean(OdorChosen, na.rm = TRUE), .groups = "drop")
+
+# Then plot with mean + SE across subjects
+disc_overall = ggplot(subject_means, aes(x = Run, y = Choice)) +
+  facet_wrap2(~StimLoc, scales = 'free_y', strip = strip) +
+  geom_line(aes(group = SubID), show.legend = FALSE, alpha = 0.5, linewidth = 0.2) +  # individual subject lines
+  stat_summary(aes(group = 1), fun = mean, geom = "line", 
+               linewidth = 1.5, color = "black") +  # group-level mean
+  stat_summary(aes(group = 1), fun.data = mean_se, geom = "errorbar", 
+               width = 0.3, linewidth = 1, color = "black") +  # SE bars
+  coord_cartesian(ylim = c(0.4, 1)) +
+  labs(x = "Runs", y = "P (Choosing rewarding stim)",
+       title = NULL) + common
 
 
 pdf(file.path(FigPaperDir,'Conditioning_overall.pdf'),8,4)
