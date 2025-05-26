@@ -145,7 +145,7 @@ s1=summary_choice_corrected %>%
   geom_violin() +
   geom_boxplot(width = 0.2, outlier.alpha = 0, alpha = 0.4) +
   scale_color_manual(values = use.col.conds) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
+  geom_jitter(aes(group=SubID), position = pd, 
               size = 2, alpha = 0.8) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
   annotate("text", x = 1, y = 0.45, label = "*", size = 4, color = "black") + # aOFC significance
