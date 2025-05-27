@@ -4,14 +4,15 @@
 
 clear; clc; close all
 
+run('../start.m');
+
 studydir = '/Volumes/X9Pro/NODEAP';
 MRIdir = fullfile(studydir,'MRI');
 SubIDlist = dir(fullfile(MRIdir, 'NODEAP*'));
 SubIDlist = SubIDlist([SubIDlist.isdir]); % only keep directories
 nSubIDlist = length(SubIDlist);
 
-userHome = getenv('HOME');
-HomeDir = fullfile(userHome,'Library/CloudStorage/Box-Box/NODEAP_data_analysis');
+HomeDir = fullfile(getenv('HOME'),'NODEAP_scripts');
 
 % read MRI count file
 count_table = xlsread('/Volumes/X9Pro/NODEAP/MRI_func_count.xlsx');
@@ -33,17 +34,9 @@ aal_data = spm_read_vols(aal_img);
 num_rois = max(aal_data(:)); % Total number of ROIs
 
 %%
-gm_nii = fullfile(maskpath,'gm_0.1_2mm.nii'); % gray matter mask
-gm_dat = spm_read_vols(spm_vol(gm_nii));
-gm_idx = find(gm_dat > 0);
-
-wm_nii = fullfile(maskpath,'wm_0.9_2mm.nii'); % white matter mask
-wm_dat = spm_read_vols(spm_vol(wm_nii));
-wm_idx = find(wm_dat > 0);
-
-csf_nii = fullfile(maskpath,'csf_0.9_2mm.nii'); % CSF mask
-csf_dat = spm_read_vols(spm_vol(csf_nii));
-csf_idx = find(csf_dat > 0);
+gm_idx  = find(spm_read_vols(spm_vol(fullfile(maskpath, 'gm_0.1_2mm.nii')))  > 0);
+wm_idx  = find(spm_read_vols(spm_vol(fullfile(maskpath, 'wm_0.9_2mm.nii'))) > 0);
+csf_idx = find(spm_read_vols(spm_vol(fullfile(maskpath, 'csf_0.9_2mm.nii'))) > 0);
 
 %%
 for subj = 1:nSubIDlist
