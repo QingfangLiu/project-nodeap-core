@@ -16,8 +16,6 @@ MRIcount = readtable('/Volumes/X9Pro/NODEAP/MRI_func_count.xlsx',"ReadRowNames",
 
 % load masks 
 gm_idx  = find(spm_read_vols(spm_vol(fullfile(maskpath, 'gm_0.1_2mm.nii')))  > 0);
-wm_idx  = find(spm_read_vols(spm_vol(fullfile(maskpath, 'wm_0.9_2mm.nii'))) > 0);
-csf_idx = find(spm_read_vols(spm_vol(fullfile(maskpath, 'csf_0.9_2mm.nii'))) > 0);
 
 % load aal atlas
 aal_atlas_3D = spm_read_vols(spm_vol('./aal116/raal.nii'));  % size = [X Y Z]
@@ -58,51 +56,34 @@ parfor t = 1:size(taskList,1)
     nscans = taskList{t,3};
 
     try
-        SubDir = fullfile(MRIdir, SubID);
-        path = fullfile(SubDir, 'nifti', 'functional', curr_rest);
+        
         save_dir = fullfile(studydir, 'FuncConn_AAL', SubID, curr_rest);
-        save_name = fullfile(save_dir,'tc_filtered_2mm.mat');
+        save_name = fullfile(save_dir,'conn_matrix.mat');
 
         if exist(save_name, 'file')
             continue;
         end
+     
+        data = load(fullfile(save_dir,'tc_filtered_2mm.mat'));  
+        dat_filtered = data.dat_filtered;
+     
+        ROI_signals = zeros(nscans, nROIs);
 
-        n = dir(fullfile(path, 's6w2*.nii'));
-        if isempty(n), continue; end
-
-        fprintf('Extracting data from %s of %s\n', curr_rest, SubID);
-
-        data_4D = spm_read_vols(spm_vol(fullfile(path, n(1).name)));
-        if size(data_4D, 4) ~= nscans
-            warning('Mismatch in %s %s: expected %d scans, found %d', SubID, curr_rest, nscans, size(data_4D, 4));
-            continue;
+        for i = 1:nROIs
+            label = roi_labels(i);
+            roi_voxel_idx = find(aal_labels_gm == label);  % column indices in dat_gm
+            if ~isempty(roi_voxel_idx)
+                ROI_signals(:, i) = mean(dat_filtered(:, roi_voxel_idx), 2);
+            end
         end
 
-        dat = reshape(data_4D, [], nscans)';  % [nscans x n_voxels]
-        dat_gm = dat(:, gm_idx);
-        wm_mean = mean(dat(:, wm_idx), 2);
-        csf_mean = mean(dat(:, csf_idx), 2);
-        gm_mean = mean(dat_gm, 2);
-        drift = (1:nscans)';
+        FC_matrix = corr(ROI_signals);  % final FC matrix
 
-        mreg_file = fullfile(studydir, 'NRegressor', SubID, sprintf('nuisance_regressors_%s.txt', curr_rest));
-        if ~exist(mreg_file, 'file')
-            warning('Missing regressor file for %s %s', SubID, curr_rest);
-            continue;
-        end
-        mreg = load(mreg_file);
-        mreg = [mreg, gm_mean, wm_mean, csf_mean, drift];
-        mreg = zscore(mreg);
-        mreg = [mreg, ones(nscans,1)];
-
-        % Regress out nuisance
-        b = mreg \ dat_gm;
-        dat_filtered = dat_gm - mreg * b;
-
+      
         % Save
         if ~exist(save_dir, 'dir'), mkdir(save_dir); end
 
-        s = struct("dat_filtered", dat_filtered);
+        s = struct("FC_matrix", FC_matrix);
         save(save_name, "-fromstruct", s);  
 
     catch ME
