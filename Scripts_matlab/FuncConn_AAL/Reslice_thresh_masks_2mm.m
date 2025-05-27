@@ -1,9 +1,10 @@
 
 clear; clc;
+run('../start.m');
 
 %% First: reslice TPM to match current data size & dim
 
-sourceImg = 'TPM.nii'; % copied from /Applications/spm12/tmp/TPM.nii
+sourceImg = './masks/TPM.nii'; % copied from /Applications/spm12/tmp/TPM.nii
 refImg = '/Volumes/X9Pro/NODEAP/MRI/NODEAP_06/nifti/functional/D0/w2fvol_4d.nii,1'; % Normalized data in 2*2*2 mm space
 
 % reslice
@@ -20,28 +21,28 @@ spm_jobman('run', matlabbatch)
 
 %% Second: threshold rTMP to get masks
 
-hdr = spm_vol('r2mmTPM.nii');
+hdr = spm_vol('./masks/r2mmTPM.nii');
 nhdr = hdr(1);
 
 % gray matter
 x = spm_read_vols(hdr(1)); 
 y = zeros(size(x));
 y(x > 0.1) = 1; % thereshold at 10%
-nhdr.fname = 'gm_0.1_2mm.nii';
+nhdr.fname = './masks/gm_0.1_2mm.nii';
 spm_write_vol(nhdr,y);
 
 % white matter
 x = spm_read_vols(hdr(2)); 
 y = zeros(size(x));
 y(x > 0.9) = 1; % thereshold at 90%
-nhdr.fname = 'wm_0.9_2mm.nii';
+nhdr.fname = './masks/wm_0.9_2mm.nii';
 spm_write_vol(nhdr,y);
 
 % CSF
 x = spm_read_vols(hdr(3)); 
 y = zeros(size(x));
 y(x > 0.9) = 1; % thereshold at 90%
-nhdr.fname = 'csf_0.9_2mm.nii';
+nhdr.fname = './masks/csf_0.9_2mm.nii';
 spm_write_vol(nhdr,y);
 
 
@@ -52,7 +53,7 @@ y1 = spm_read_vols(spm_vol(refImg));
 size(y1)
 
 % gray matter
-y2 = spm_read_vols(spm_vol('gm_0.1_2mm.nii'));
+y2 = spm_read_vols(spm_vol('./masks/gm_0.1_2mm.nii'));
 size(y2)
 
 % gray matter should have the same size as the reference image
