@@ -8,10 +8,18 @@ import torch
 from sklearn.preprocessing import StandardScaler
 
 def vectorize_fc(fc_mat):
-    """Return upper triangle of FC matrix (excluding diagonal)."""
-    return fc_mat[np.triu_indices(fc_mat.shape[0], k=1)]
+    """
+    Vectorize FC matrix:
+    - If square, return upper triangle (excluding diagonal).
+    - Otherwise, return the flattened matrix.
+    """
+    if fc_mat.shape[0] == fc_mat.shape[1]:
+        return fc_mat[np.triu_indices(fc_mat.shape[0], k=1)]
+    else:
+        return fc_mat.flatten()
 
-def load_all_fc_data(sub_cond_path, base_nifti_folder):
+
+def load_all_fc_data(sub_cond_path, base_nifti_folder, mat_filename='conn_matrix.mat', key_name='FC_matrix'):
     """Load and vectorize FC data, returning data, labels, and IDs."""
     SubInfo = pd.read_excel(sub_cond_path)
     Subs = SubInfo[SubInfo['Include'] == 1]['SubID'].tolist()
@@ -30,25 +38,28 @@ def load_all_fc_data(sub_cond_path, base_nifti_folder):
     all_corr_data = []
     all_tms_type = []
     all_subject_id = []
+    all_stimloc = []
 
     for _, row in SubInfo.iterrows():
         subject_id = row['SubID']
         if row['Include'] != 1:
             continue
+        stimloc = row['StimLoc']
         tms_types = order_map.get(row['StimOrder'], ['N'] * 7)
         for j, session in enumerate(sessions):
-            mat_file = os.path.join(base_nifti_folder, subject_id, session, 'conn_matrix.mat')
+            mat_file = os.path.join(base_nifti_folder, subject_id, session, mat_filename)
             if os.path.exists(mat_file):
                 matdat = loadmat(mat_file)
-                dat_corr = matdat['FC_matrix']
+                dat_corr = matdat[key_name]
                 dat_vec = vectorize_fc(dat_corr)
                 all_corr_data.append(dat_vec)
                 all_tms_type.append(tms_types[j])
                 all_subject_id.append(subject_id)
+                all_stimloc.append(stimloc)
             else:
                 print(f"[WARN] File not found: {mat_file}")
     
-    return np.array(all_corr_data), all_tms_type, all_subject_id
+    return np.array(all_corr_data), np.array(all_tms_type), np.array(all_subject_id), np.array(all_stimloc)
 
 def preprocess_for_torch(X):
     scaler = StandardScaler()
