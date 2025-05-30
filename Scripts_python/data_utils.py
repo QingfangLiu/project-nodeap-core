@@ -75,4 +75,5 @@ def preprocess_for_torch(X):
 
     # convert to torch tensor
     X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
+    print(f"Tensor shape after preprocessing: {X_tensor.shape}")
     return X_tensor

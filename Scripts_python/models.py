@@ -36,6 +36,7 @@ class VAE(nn.Module):
         z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
 
+# conditional VAE by adding condition variables via one-hot encoding
 class CVAE(VAE):
     def __init__(self, input_dim, latent_dim, cond_dim):
         super(CVAE, self).__init__(input_dim + cond_dim, latent_dim)
