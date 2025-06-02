@@ -1,7 +1,6 @@
 # 🧠 NODEAP Project: subject_data_issues
 
 ## 📌 Subject: `NODEAP_17`
-- **Status**: Now organized separately.
 - **Issue**: Only completed **two runs of conditioning** in **Session 2**.
 - **Action Taken**:
   - Entire **Session 2** treated as **missing data**.
@@ -28,8 +27,8 @@
   - However, the **devaluation order is unusual**:
     - Sweet was devalued twice (Sessions 1 and 2),
     - Savory only in Session 3.
-- **Action Needed**:
-  - Must **account for this irregular devaluation pattern** in the analysis.
+- **Status**:
+  - Have taken into this account in data analysis.
 
 ---
 
