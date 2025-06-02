@@ -4,24 +4,40 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class VAE(nn.Module):
-    def __init__(self, input_dim, latent_dim):
-        super(VAE, self).__init__()
+    def __init__(self, input_dim, latent_dim, hidden_dim=256):
+        """
+        Variational Autoencoder.
+
+        Args:
+            input_dim (int): Dimensionality of input x
+            latent_dim (int): Dimensionality of latent variable z
+            hidden_dim (int): Size of hidden layer (default: 128)
+        """
+        super().__init__()
+        self.input_dim = input_dim
+        self.latent_dim = latent_dim
+        self.hidden_dim = hidden_dim
+
+        # Encoder: x → latent
         self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 256),
+            nn.Linear(input_dim, hidden_dim),
             nn.ReLU()
         )
-        self.fc_mu = nn.Linear(256, latent_dim)
-        self.fc_logvar = nn.Linear(256, latent_dim)
+        self.fc_mu = nn.Linear(hidden_dim, latent_dim)
+        self.fc_logvar = nn.Linear(hidden_dim, latent_dim)
 
+        # Decoder: z → x_hat
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, 256),
+            nn.Linear(latent_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(256, input_dim)
+            nn.Linear(hidden_dim, input_dim)
         )
 
     def encode(self, x):
         h = self.encoder(x)
-        return self.fc_mu(h), self.fc_logvar(h)
+        mu = self.fc_mu(h)
+        logvar = self.fc_logvar(h)
+        return mu, logvar
 
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
@@ -34,23 +50,62 @@ class VAE(nn.Module):
     def forward(self, x):
         mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar
+        recon_x = self.decode(z)
+        return recon_x, mu, logvar
+
 
 # conditional VAE by adding condition variables via one-hot encoding
-class CVAE(VAE):
-    def __init__(self, input_dim, latent_dim, cond_dim):
-        super(CVAE, self).__init__(input_dim + cond_dim, latent_dim)
+class CVAE(nn.Module):
+    def __init__(self, input_dim, cond_dim, latent_dim, hidden_dim=128):
+        """
+        Conditional Variational Autoencoder.
+
+        Args:
+            input_dim (int): Dimensionality of input x
+            cond_dim (int): Dimensionality of condition vector c
+            latent_dim (int): Dimensionality of latent variable z
+            hidden_dim (int): Hidden layer size (default: 128)
+        """
+        super().__init__()
+        self.input_dim = input_dim
         self.cond_dim = cond_dim
+        self.latent_dim = latent_dim
+        self.hidden_dim = hidden_dim
+
+        # Encoder: [x || c] → latent space
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim + cond_dim, hidden_dim),
+            nn.ReLU()
+        )
+        self.fc_mu = nn.Linear(hidden_dim, latent_dim)
+        self.fc_logvar = nn.Linear(hidden_dim, latent_dim)
+
+        # Decoder: [z || c] → reconstruction
+        self.decoder = nn.Sequential(
+            nn.Linear(latent_dim + cond_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, input_dim)
+        )
 
     def encode(self, x, c):
-        x_cond = torch.cat([x, c], dim=-1)
-        return super().encode(x_cond)
+        x_cond = torch.cat([x, c], dim=1)
+        h = self.encoder(x_cond)
+        mu = self.fc_mu(h)
+        logvar = self.fc_logvar(h)
+        return mu, logvar
+
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return mu + eps * std
 
     def decode(self, z, c):
-        z_cond = torch.cat([z, c], dim=-1)
+        z_cond = torch.cat([z, c], dim=1)
         return self.decoder(z_cond)
 
     def forward(self, x, c):
         mu, logvar = self.encode(x, c)
         z = self.reparameterize(mu, logvar)
-        return self.decode(z, c), mu, logvar
+        recon_x = self.decode(z, c)
+        return recon_x, mu, logvar
+
