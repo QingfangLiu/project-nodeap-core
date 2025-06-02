@@ -1,4 +1,4 @@
-# 🧠 NODEAP Project: subject_data_issues
+# 🧠 NODEAP Project data issues
 
 ## 📌 Subject: `NODEAP_17`
 - **Issue**: Only completed **two runs of conditioning** in **Session 2**.
@@ -36,3 +36,26 @@
 
 - One subject **missed one conditioning run**, but the data was **recovered from intermediate variables**.
 - For **all other subjects and runs**, conditioning data in the **final dataset match** the intermediate data after checking.
+
+---
+
+## 🧲 Summary of MRI Data Issues
+
+### 📉 Missing Data
+
+- `NODEAP_30`: Missing **S3D2** (Sham)
+- `NODEAP_83`: Missing **S3D1** (cTBS)
+- `NODEAP_44`: **S1D1** has partial acquisition (only 205 volumes) during cTBS scan
+- `NODEAP_87`, `NODEAP_88`: Identical data for **D0** and **S1D1**
+  - Resting-state data before S1D1 was not collected
+  - Both subjects had Sham on S1D1, so S1D1 was reused as D0 to calculate stimulation coordinates
+  - These scans should only be used **once** when analyzing across the 7-session timeline
+  - Only the compressed `D0_rest` folder is retained; D0 data should be treated as missing
+
+### ⚙️ Handling in Analysis
+
+- **Missing sessions** are treated as missing data when standardizing motion-related metrics (e.g., diff and var) across sessions
+- For `NODEAP_44` **S1D1**:
+  - The 205 available volumes were included in the standardization
+  - Global connectivity was computed based on the available data
+
