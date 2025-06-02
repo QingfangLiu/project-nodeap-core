@@ -1,11 +1,4 @@
 ## Summary of Behavioral Data Issues
-
-### 📌 Subject: `NODEAP_17`
-- **Issue**: Only completed **two runs of conditioning** in **Session 2**.
-- **Action Taken**:
-  - Entire **Session 2** treated as **missing data**.
-  - **Sessions 1 and 3** are still included in the analysis.
-  - This subject was assigned to the **SC–CS–SS** condition, so the **CS (Session 2)** data is missing.
  
 ### 📌 Subject: `NODEAP_17`
 
