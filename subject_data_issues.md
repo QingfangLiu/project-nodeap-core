@@ -51,6 +51,10 @@
   - Both subjects had Sham on S1D1, so S1D1 was reused as D0 to calculate stimulation coordinates
   - These scans should only be used **once** when analyzing across the 7-session timeline
   - Only the compressed `D0_rest` folder is retained; D0 data should be treated as missing
+- `NODEAP_41`: **S3D2** has different image dimensions (**104×104×78**)
+  - Should be fine if a **normalization** step is applied
+  - For **realignment**, handle this session separately
+  - If using **native-space processing**, add an additional **reslicing step** (i.e., apply `+'r'` prefix)
 
 ### ⚙️ Handling in Analysis
 
