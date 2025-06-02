@@ -83,7 +83,7 @@ summary(model1)
 model2 <- lmer(motion ~ TMS_types + StimLoc + (1|SubID), data = use_df)
 anova(model2,model0) 
 
-p1a=use_df %>%
+use_df %>%
   ggplot(aes(x=TMS_types,y=motion,fill=TMS_types)) +
   geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
   geom_jitter(aes(color=TMS_types,group=TMS_types), 
@@ -95,7 +95,7 @@ p1a=use_df %>%
   common
 
 # how motion changes with sessions
-p2=use_df %>%
+use_df %>%
   ggplot(aes(x=Sess,y=motion,fill=Sess)) +
   geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
   geom_jitter(aes(color=Sess,group=Sess), 
@@ -105,9 +105,4 @@ p2=use_df %>%
   labs(title = '',y = 'Framewise Displacement (mm)', x = '') +
   common
   
-pdf(file.path(FigDir,'MRI_motion_sessions.pdf'),8,7)
-print(p1)
-print(p1a)
-print(p2)
-dev.off()
 
