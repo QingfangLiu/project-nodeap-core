@@ -1,17 +1,31 @@
-# 🧠 NODEAP Project data issues
+## Summary of Behavioral Data Issues
 
-## 📌 Subject: `NODEAP_17`
+### 📌 Subject: `NODEAP_17`
 - **Issue**: Only completed **two runs of conditioning** in **Session 2**.
 - **Action Taken**:
   - Entire **Session 2** treated as **missing data**.
   - **Sessions 1 and 3** are still included in the analysis.
   - This subject was assigned to the **SC–CS–SS** condition, so the **CS (Session 2)** data is missing.
+ 
+### 📌 Subject: `NODEAP_17`
 
----
+- **Condition Assignment**: SC–CS–SS  
+- **Behavioral Data Issue**:
+  - Only completed **two runs of conditioning** in **Session 2** (cTBS–sham)
+  - Behavioral data from Session 2 is **partial** and saved separately
+  - For analysis, **Sessions 1 and 3** are included
+  - Not used for **conditioning comparisons**
+  - Could slightly enhance power for **sham–cTBS vs sham–sham** comparison
+- **Neural Data Handling**:
+  - **Neural data from Session 2 is included**, *except when correlating MRI with behavior*
+- **Summary Action**:
+  - Entire Session 2 treated as **missing for behavior**
+  - Kept in MRI-level analyses where behavioral correlation is not required
 
-## 📌 Subject: `NODEAP_44`
 
-### 🗓️ Session Schedule & Conditions
+### 📌 Subject: `NODEAP_44`
+
+#### 🗓️ Session Schedule & Conditions
 
 | Session | Date       | Stimulation | Devaluation       |
 |---------|------------|-------------|-------------------|
@@ -30,9 +44,7 @@
 - **Status**:
   - Have taken into this account in data analysis.
 
----
-
-## 🧪 Conditioning Data: General Notes
+### 🧪 Conditioning Data: General Notes
 
 - One subject **missed one conditioning run**, but the data was **recovered from intermediate variables**.
 - For **all other subjects and runs**, conditioning data in the **final dataset match** the intermediate data after checking.
