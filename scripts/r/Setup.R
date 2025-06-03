@@ -16,7 +16,7 @@ library(ggh4x) # tweaking ggplots (e.g. facets)
 library(grid)  # manually adding panel/label names with shade
 
 FigPaperDir = '/Users/liuq13/NODEAP_scripts/Figs_paper'
-pro_dat_dir = '/Users/liuq13/NODEAP_scripts/ProcessedData'
+pro_dat_dir = '/Users/liuq13/NODEAP_scripts/data_beh_processed'
 
 pd <- position_dodge(0.6) # set dodge width
 
