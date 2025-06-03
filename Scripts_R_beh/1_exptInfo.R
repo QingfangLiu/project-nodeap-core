@@ -117,57 +117,6 @@ levels(TMS_rating_df$TMS_type)=c('cTBS','sham')
 # people tend to rate cTBS as more uncomfortable and stronger
 # than sham sessions, very clear pattern
 
-p1=ggplot(TMS_rating_df,aes(x=TMS_type,y=uncom)) +
-  facet_wrap(~StimLoc) +
-  geom_boxplot(width = 0.6, alpha = 0.4, position = position_dodge(0.75),
-               outlier.alpha = 0) +
-  geom_jitter(aes(group=SubID), position = pd, 
-              size = 1.5, alpha = 0.8) +
-  labs(y='Uncomfortable',x='') +
-  common 
-
-p2=ggplot(TMS_rating_df,aes(x=TMS_type,y=strong)) +
-  facet_wrap(~StimLoc) +
-  geom_boxplot(width = 0.6, alpha = 0.4, position = position_dodge(0.75),
-               outlier.alpha = 0) +
-  geom_jitter(aes(group=SubID), position = pd, 
-              size = 1.5, alpha = 0.8) +
-  labs(y='Strong',x='') +
-  common 
-
-# are ratings of cTBS were influenced by which session they received it?
-# not really
-
-p3=TMS_rating_df %>%
-  subset(TMS_type == 'cTBS') %>%
-  ggplot(aes(x=TMSSess,y=uncom)) +
-  geom_point() + 
-  facet_wrap(~StimLoc,scales = 'free_y') +
-  labs(y='Uncomfortable',x='') +
-  common
-
-p4=TMS_rating_df %>%
-  subset(TMS_type == 'cTBS') %>%
-  ggplot(aes(x=TMSSess,y=uncom)) +
-  geom_point() + 
-  facet_wrap(~StimLoc,scales = 'free_y') +
-  labs(y='strong',x='') +
-  common
-
-p5=ggplot(TMS_rating_df,aes(x=strong,y=uncom)) +
-  facet_wrap(~StimLoc) +
-  geom_point(aes(color=TMS_type)) +
-  labs(y='strong',x='Uncomfortable') +
-  common
-
-pdf(file.path(FigDir,'Survey_uncomf_strong.pdf'),6,4)
-print(p1)
-print(p2)
-print(p3)
-print(p4)
-print(p5)
-dev.off()
-
 # save survey data frame
 write.xlsx(TMS_rating_df,
            file = '../ProcessedData/Survey_uncomf_strong.xlsx')
