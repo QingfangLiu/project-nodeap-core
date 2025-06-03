@@ -41,7 +41,7 @@ def load_all_fc_data(sub_cond_path, base_nifti_folder, mat_filename='conn_matrix
         row_idx (int or None): If specified, only vectorize the row at this index in the FC matrix.
 
     Returns:
-        Tuple of np.ndarray: (all_corr_data, all_tms_type, all_subject_id, all_stimloc)
+        Tuple of np.ndarray: (all_corr_data, all_tms_type, all_subject_id, all_stimloc, all_session)
     """
     SubInfo = pd.read_excel(sub_cond_path)
     Subs = SubInfo[SubInfo['Include'] == 1]['SubID'].tolist()
@@ -60,6 +60,7 @@ def load_all_fc_data(sub_cond_path, base_nifti_folder, mat_filename='conn_matrix
     all_tms_type = []
     all_subject_id = []
     all_stimloc = []
+    all_session = []
 
     for _, row in SubInfo.iterrows():
         subject_id = row['SubID']
@@ -77,10 +78,11 @@ def load_all_fc_data(sub_cond_path, base_nifti_folder, mat_filename='conn_matrix
                 all_tms_type.append(tms_types[j])
                 all_subject_id.append(subject_id)
                 all_stimloc.append(stimloc)
+                all_session.append(session)
             else:
                 print(f"[WARN] File not found: {mat_file}")
     
-    return np.array(all_corr_data), np.array(all_tms_type), np.array(all_subject_id), np.array(all_stimloc)
+    return np.array(all_corr_data), np.array(all_tms_type), np.array(all_subject_id), np.array(all_stimloc), np.array(all_session)
 
 
 def preprocess_for_torch(X):

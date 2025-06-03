@@ -190,7 +190,7 @@ def compute_condition_distances(mu_all, all_tms_type, all_subject_id, label_map=
     return pd.DataFrame(results)
 
 
-def compute_per_session_dist_to_null(mu_all, all_subject_id, all_tms_type):
+def compute_per_session_dist_to_null(mu_all, all_subject_id, all_tms_type, all_session):
     """
     For each session (row), compute distance to the subject's null session centroid.
 
@@ -203,7 +203,8 @@ def compute_per_session_dist_to_null(mu_all, all_subject_id, all_tms_type):
     """
     all_subject_id = np.array(all_subject_id)
     all_tms_type = np.array(all_tms_type)
-
+    all_session = np.array(all_session)
+    
     results = []
     subjects = np.unique(all_subject_id)
 
@@ -221,6 +222,7 @@ def compute_per_session_dist_to_null(mu_all, all_subject_id, all_tms_type):
     for i in range(len(mu_all)):
         subj = all_subject_id[i]
         cond = all_tms_type[i]
+        session = all_session[i]
         embedding = mu_all[i]
 
         # Skip if null or no null baseline available
@@ -232,6 +234,7 @@ def compute_per_session_dist_to_null(mu_all, all_subject_id, all_tms_type):
             'subject': subj,
             'index': i,
             'condition': cond,
+            'session': session,
             'distance_to_null': dist
         })
 
