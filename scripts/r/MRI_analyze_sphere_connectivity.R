@@ -11,9 +11,7 @@
 #      averages for same-network and between-network comparisons.
 #   3. Visualizing subject-level FC distributions using violin plots 
 #      and paired boxplots, aligned across different connection types.
-#   4. Conducting paired Wilcoxon tests:
-#      - Between same-network and cross-LPFC connectivity
-#      - Across different seeds targeting the same LPFC region
+#   4. Conducting mixed effect modeling
 #   5. Creating a combined figure (p1 + p2) for publication using `ggarrange()`.
 #
 # Output:
@@ -28,8 +26,8 @@
 
 
 rm(list = ls())
-source('../Scripts_R_beh/Setup.R')
-SubInfo = read.xlsx('../ProcessedData/SubConds.xlsx') %>%
+source('Setup.R')
+SubInfo = read.xlsx('../../data_input/SubConds.xlsx') %>%
   filter(Include == 1)
 Subs = SubInfo$SubID
 
@@ -82,6 +80,26 @@ fc_df <- bind_rows(lapply(mat_files, parse_fc_file)) %>%
   mutate(Pair = paste(sort(c(Sphere1, Sphere2)), collapse = "_")) %>%
   ungroup()
 
+# do mixed effect modeling
+use_type = c('aOFC-conn-LPFC_Seed-aOFC','pOFC-conn-LPFC_Seed-pOFC','aOFC-conn-LPFC_pOFC-conn-LPFC')
+
+fc_df_select = fc_df %>%
+  subset(Pair %in% use_type) %>%
+  select(SubID,Session,Pair,FC) %>%
+  mutate(NetworkType = case_when(
+  Pair %in% c("aOFC-conn-LPFC_Seed-aOFC", "pOFC-conn-LPFC_Seed-pOFC") ~ "same network",
+  Pair == "aOFC-conn-LPFC_pOFC-conn-LPFC" ~ "between LPFCs"
+))
+
+fc_df_select$NetworkType <- factor(fc_df_select$NetworkType, levels = c("same network", "between LPFCs"))
+
+model0 <- lmer(FC ~ (1 | SubID), data = fc_df_select)
+model1 <- lmer(FC ~ NetworkType + (1 | SubID), data = fc_df_select)
+anova(model0,model1)
+summary(model1)
+
+
+
 fc_subj_avg_same_network <- fc_df %>%
   subset(Pair %in% c('aOFC-conn-LPFC_Seed-aOFC','pOFC-conn-LPFC_Seed-pOFC')) %>%
   group_by(SubID) %>%
@@ -94,12 +112,6 @@ fc_subj_avg_bt_LPFC <- fc_df %>%
   mutate(type = 'between LPFCs')
 fc_summary_stats <- rbind(fc_subj_avg_same_network,fc_subj_avg_bt_LPFC)
 
-# Load all data again (this time for seed-to-LPFC, no triangle filtering)
-fc_df_seed_stim <- bind_rows(
-  lapply(mat_files, function(f) parse_fc_file(f, keep_lower = FALSE))) %>%
-  filter(grepl("Seed", Sphere1) & grepl("LPFC", Sphere2)) %>%
-  group_by(SubID, Sphere1, Sphere2) %>%
-  reframe(FC = mean(FC, na.rm = TRUE))
 
 ###################################
 
@@ -121,19 +133,47 @@ p1 = fc_summary_stats %>%
     limits = c(-0.25, 0.88),           # Set y-axis limits
     breaks = seq(-0.25, 1, by = 0.25)  # Set specific tick marks
   ) +
-  annotate("text", x=1.5, y=ytext, label='*') +
+  annotate("text", x=1.5, y=ytext, label='***') +
   annotate("segment",x = 1, xend = 1, y = ylow, yend = yhigh) +
   annotate("segment",x = 2, xend = 2, y = ylow, yend = yhigh) +
   annotate("segment",x = 1, xend = 2, y = yhigh, yend = yhigh) +
   labs(y=NULL,x=NULL,title=NULL) +
   common
 
-val_same_net <- fc_summary_stats %>%
-  filter(type == "same network") %>% pull(FC) 
-val_bt_LPFC <- fc_summary_stats %>%
-  filter(type == "between LPFCs") %>% pull(FC) 
-wilcox.test(val_same_net, val_bt_LPFC, paired = TRUE, alternative = "two.sided")
+###################################
 
+# Load all data again (this time for seed-to-LPFC, no triangle filtering)
+fc_df_seed_stim <- bind_rows(
+  lapply(mat_files, function(f) parse_fc_file(f, keep_lower = FALSE))) %>%
+  filter(grepl("Seed", Sphere1) & grepl("LPFC", Sphere2)) %>%
+  group_by(SubID, Session, Sphere1, Sphere2) %>%
+  reframe(FC = mean(FC, na.rm = TRUE))
+
+# do mixed effect modeling
+fc_df_seed_stim_aLPFC = fc_df_seed_stim %>%
+  filter(Sphere2 == "aOFC-conn-LPFC")
+fc_df_seed_stim_aLPFC$Sphere1 <- as.factor(fc_df_seed_stim_aLPFC$Sphere1)
+model0 <- lmer(FC ~ (1 | SubID), data = fc_df_seed_stim_aLPFC)
+model1 <- lmer(FC ~ Sphere1 + (1 | SubID), data = fc_df_seed_stim_aLPFC)
+anova(model0, model1)
+summary(model1)
+
+fc_df_seed_stim_pLPFC = fc_df_seed_stim %>%
+  filter(Sphere2 == "pOFC-conn-LPFC")
+fc_df_seed_stim_pLPFC$Sphere1 <- as.factor(fc_df_seed_stim_pLPFC$Sphere1)
+model0 <- lmer(FC ~ (1 | SubID), data = fc_df_seed_stim_pLPFC)
+model1 <- lmer(FC ~ Sphere1 + (1 | SubID), data = fc_df_seed_stim_pLPFC)
+anova(model0, model1)
+summary(model1)
+
+
+###### prepre for plot
+
+fc_df_seed_stim <- bind_rows(
+  lapply(mat_files, function(f) parse_fc_file(f, keep_lower = FALSE))) %>%
+  filter(grepl("Seed", Sphere1) & grepl("LPFC", Sphere2)) %>%
+  group_by(SubID, Sphere1, Sphere2) %>%
+  reframe(FC = mean(FC, na.rm = TRUE))
 
 strip = strip_themed(background_y = elem_list_rect(fill = use.col.ap.lpfc),
                      text_y = elem_list_text(color = 'black',face = "italic",size = 16))
@@ -168,42 +208,17 @@ pdf(file.path(FigPaperDir,'Fig_conn_seed_stim.pdf'),9.5,4)
 ggarrange(p2,p1,nrow = 1,widths = c(2.5,1),align = "h")
 dev.off()
 
-
-# Cross-seed test: Seed-aOFC vs. Seed-pOFC both to aOFC-conn-LPFC
-aSeed_aStim <- fc_df_seed_stim %>%
-  filter(Sphere1 == "Seed-aOFC", Sphere2 == "aOFC-conn-LPFC") %>% pull(FC)
-pSeed_aStim <- fc_df_seed_stim %>%
-  filter(Sphere1 == "Seed-pOFC", Sphere2 == "aOFC-conn-LPFC") %>% pull(FC) 
-wilcox.test(aSeed_aStim, pSeed_aStim, paired = TRUE, alternative = "two.sided")
-
-# Cross-seed test: Seed-aOFC vs. Seed-pOFC both to pOFC-conn-LPFC
-aSeed_pStim <- fc_df_seed_stim %>%
-  filter(Sphere1 == "Seed-aOFC", Sphere2 == "pOFC-conn-LPFC") %>% pull(FC) 
-pSeed_pStim2 <- fc_df_seed_stim %>%
-  filter(Sphere1 == "Seed-pOFC", Sphere2 == "pOFC-conn-LPFC") %>% pull(FC) 
-wilcox.test(pSeed_pStim2, aSeed_pStim, paired = TRUE, alternative = "two.sided")
-
 #############################################################
 
-# use their group assignment
-summary_convals_expt = dfconvals %>%
-  subset(Stim=='aOFC-conn-LPFC'& StimLoc=='Anterior'|
-           Stim=='pOFC-conn-LPFC'& StimLoc=='Posterior') %>%
-  group_by(Seed,Stim,SubID,StimLoc) %>% 
-  reframe(Conn=mean(Conn,na.rm=T)) %>% 
-  arrange(SubID)
+# obtain individual FC measure for later use
+fc_with_stim <- fc_df_seed_stim %>%
+  left_join(SubInfo %>% select(SubID, StimLoc), by = "SubID") %>%
+  mutate(Expected_OFC = ifelse(StimLoc == "Anterior", "Seed-aOFC", "Seed-pOFC"),
+         Expected_LPFC = ifelse(StimLoc == "Anterior", "aOFC-conn-LPFC", "pOFC-conn-LPFC")) %>%
+  filter(Sphere1 == Expected_OFC & Sphere2 == Expected_LPFC) %>%
+  select(SubID,StimLoc,Sphere1,Sphere2,FC)
 
-# calculate indexes
-df1 = summary_convals_expt %>% subset(Seed=='Seed-aOFC')
-ACI = df1$Conn
-df2 = summary_convals_expt %>% subset(Seed=='Seed-pOFC')
-PCI = df2$Conn
-
-df_idx = df1 %>% 
-  select(SubID,StimLoc) %>%
-  mutate(ACI=ACI,PCI=PCI)
-
-write.csv(df_idx, "../ProcessedData/ConnIdx.csv", row.names = FALSE)
+write.csv(fc_with_stim, "../../data_mri_processed/ConnIdx.csv", row.names = FALSE)
 
 
   
