@@ -3,7 +3,7 @@ rm(list = ls())
 source('Setup.R')
 
 # standarize ratings before stat testing & more comparisons
-load('../ProcessedData/Odor_ratings_dat.RData')
+load('../../data_beh_processed/Odor_ratings_dat.RData')
 
 p0=ggplot(Odor_ratings_dat,aes(x=IfDevalue,y=Pleasant)) +
   geom_boxplot(aes(linetype = PrePost),
@@ -80,6 +80,10 @@ p2=ggplot(Odor_ratings_dat,aes(x=IfDevalue,y=Pleasant)) +
 
 pdf(file.path(FigPaperDir,'PleasantRatings_comp.pdf'),8,12)
 ggarrange(p1,p2,nrow = 2)
+dev.off()
+
+pdf(file.path(FigPaperDir,'PleasantRatings_by_cond.pdf'),8,6)
+print(p1)
 dev.off()
 
 

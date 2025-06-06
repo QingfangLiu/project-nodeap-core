@@ -75,13 +75,7 @@ p_choice_2 = summary_use_choice_dat_ss_vdiff %>%
 cor.test(summary_use_choice_dat_ss_vdiff$value_diff, 
     summary_use_choice_dat_ss_vdiff$MeanChoice)
 
-pdf(file.path(FigPaperDir,'Choice_w_values_agg_gradient.pdf'),5,4)
-print(p_choice_1)
+pdf(file.path(FigPaperDir,'Choice_w_values_agg_gradient.pdf'),10,4)
+ggarrange(p_choice_1,p_choice_2)
 dev.off()
-
-pdf(file.path(FigPaperDir,'Choice_w_values_agg.pdf'),5,4)
-print(p_choice_2)
-dev.off()
-
-
 

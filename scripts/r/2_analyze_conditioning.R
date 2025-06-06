@@ -4,7 +4,7 @@ rm(list = ls())
 source('Setup.R')
 
 ###############################
-load('../ProcessedData/Conditioning.RData')
+load('../../data_beh_processed/Conditioning.RData')
 
 # this one, each panel has the same group of people
 # separated by stimulation order
@@ -174,3 +174,65 @@ disc_overall = ggplot(subject_means, aes(x = Run, y = Choice)) +
 pdf(file.path(FigPaperDir,'Conditioning_overall.pdf'),8,4)
 print(disc_overall)
 dev.off()
+
+
+subject_cond_means <- conditioning_dat %>%
+  group_by(SubID, Run, StimLoc, Cond_day1) %>%
+  summarise(Choice = mean(OdorChosen, na.rm = TRUE), .groups = "drop")
+
+disc_overall_day1 = ggplot(subject_cond_means, aes(x = Run, y = Choice, color = Cond_day1)) +
+  facet_wrap2(~StimLoc, scales = 'free_y', strip = strip) +  # Same layout as before
+  geom_line(aes(group = interaction(SubID, Cond_day1)), alpha = 0.3, linewidth = 0.3) +  # individual subjects
+  stat_summary(aes(group = Cond_day1), fun = mean, geom = "line", linewidth = 1.5) +  # group-level mean per condition
+  stat_summary(aes(group = Cond_day1), fun.data = mean_se, geom = "errorbar",
+               width = 0.3, linewidth = 1) +  # SE bars
+  coord_cartesian(ylim = c(0.4, 1)) +
+  scale_color_manual(values = use.col.conds.day1) +
+  labs(x = "Runs", y = "P (Choosing rewarding stim)", color = "Condition", title = NULL) +
+  common  # include your shared theme etc.
+
+conditioning_dat$Cond_day1 <- as.factor(conditioning_dat$Cond_day1)
+conditioning_dat$Run <- as.numeric(conditioning_dat$Run)
+
+# Mixed-effects logistic model
+m_cond <- glmer(OdorChosen ~ Cond_day1 * Run + (1 | SubID), 
+                data = conditioning_dat, 
+                family = binomial)
+
+summary(m_cond)
+
+pdf(file.path(FigPaperDir,'Conditioning_day1.pdf'),8,4)
+print(disc_overall_day1)
+dev.off()
+
+## if using all 3 conditions
+
+subject_cond_means <- conditioning_dat %>%
+  group_by(SubID, Run, StimLoc, Cond) %>%
+  summarise(Choice = mean(OdorChosen, na.rm = TRUE), .groups = "drop")
+
+ggplot(subject_cond_means, aes(x = Run, y = Choice, color = Cond)) +
+  facet_wrap(~StimLoc, scales = 'free_y', strip.position = "top") +  # Same layout as before
+  geom_line(aes(group = interaction(SubID, Cond)), alpha = 0.3, linewidth = 0.3) +  # individual subjects
+  stat_summary(aes(group = Cond), fun = mean, geom = "line", linewidth = 1.5) +  # group-level mean per condition
+  stat_summary(aes(group = Cond), fun.data = mean_se, geom = "errorbar",
+               width = 0.3, linewidth = 1) +  # SE bars
+  coord_cartesian(ylim = c(0.4, 1)) +
+  scale_color_manual(values = use.col.conds) +
+  labs(x = "Runs", y = "P (Choosing rewarding stim)", color = "Condition", title = NULL) +
+  common  # include your shared theme etc.
+
+
+# Make sure Cond and Run are factors (if appropriate)
+conditioning_dat$Cond <- as.factor(conditioning_dat$Cond)
+conditioning_dat$Run <- as.numeric(conditioning_dat$Run)
+
+# Mixed-effects logistic model
+m_cond <- glmer(OdorChosen ~ Cond * Run + (1 | SubID), 
+                data = conditioning_dat, 
+                family = binomial)
+
+# Model summary
+summary(m_cond)
+
+

@@ -115,3 +115,69 @@ choice_dat_ss_w_base <- choice_dat_ss %>%
 
 save(choice_dat_ss_w_base, file = '../ProcessedData/choice_dat_ss_w_base.RData')
 save(pre_choice_df, file = '../ProcessedData/pre_choice_df_sated_pref_ss.RData')
+
+
+# new plots
+
+summary_choice_ss_day1 <- choice_dat_ss %>%
+  filter(Cond %in% c('sham-sham','cTBS-sham')) %>%
+  group_by(SubID, StimLoc, 
+           Cond, PrePost) %>%
+  reframe(Choice = mean(Choice, na.rm = TRUE))
+
+# Make sure PrePost is ordered
+summary_choice_ss_day1$PrePost <- factor(summary_choice_ss_day1$PrePost, levels = c("Pre", "Post"))
+
+strip <- strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
+                      text_x = elem_list_text(color = 'white',
+                                              face = "bold",
+                                              size = 16))
+
+p_day1 = ggplot(summary_choice_ss_day1, aes(x = Cond, y = Choice)) +
+  geom_boxplot(aes(linetype = PrePost),
+               width = 0.6, alpha = 0.4, position = position_dodge(0.75),
+               outlier.alpha = 0, show.legend = F) +
+  geom_jitter(aes(shape=PrePost,colour = Cond),
+              position = position_jitterdodge(dodge.width = 0.75, 
+                                              jitter.width = 0.2), 
+              size = 1.5, alpha = 0.6) +
+  facet_wrap2(~StimLoc, scales = 'free_y', strip = strip) +
+  scale_color_manual(values = use.col.conds) +
+  labs(x = NULL, y = "P (Choosing sated)", title = NULL) +
+  common +
+  theme(legend.position = 'none')
+
+
+
+summary_choice_ss_day2 <- choice_dat_ss %>%
+  filter(Cond %in% c('sham-sham','sham-cTBS')) %>%
+  group_by(SubID, StimLoc, 
+           Cond, PrePost) %>%
+  reframe(Choice = mean(Choice, na.rm = TRUE))
+
+# Make sure PrePost is ordered
+summary_choice_ss_day2$PrePost <- factor(summary_choice_ss_day2$PrePost, levels = c("Pre", "Post"))
+
+p_day2 = ggplot(summary_choice_ss_day2, aes(x = Cond, y = Choice)) +
+  geom_boxplot(aes(linetype = PrePost),
+               width = 0.6, alpha = 0.4, position = position_dodge(0.75),
+               outlier.alpha = 0, show.legend = F) +
+  geom_jitter(aes(shape=PrePost,colour = Cond),
+              position = position_jitterdodge(dodge.width = 0.75, 
+                                              jitter.width = 0.2), 
+              size = 1.5, alpha = 0.6) +
+  facet_wrap2(~StimLoc, scales = 'free_y', strip = strip) +
+  scale_color_manual(values = use.col.conds) +
+  labs(x = NULL, y = "P (Choosing sated)", title = NULL) +
+  common +
+  theme(legend.position = 'none')
+
+pdf(file.path(FigPaperDir,'choice_sated_day1.pdf'),8,4)
+print(p_day1)
+dev.off()
+
+pdf(file.path(FigPaperDir,'choice_sated_day2.pdf'),8,4)
+print(p_day2)
+dev.off()
+
+
