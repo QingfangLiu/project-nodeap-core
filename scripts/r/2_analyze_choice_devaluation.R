@@ -28,6 +28,10 @@ wilcox.test(value_pOFC, alternative = 'less')  # Significant: p = 0.0023
 value_aOFC <- subset(summary_choice_corrected, StimLoc == 'aOFC')$ChoiceChangeAB
 wilcox.test(value_aOFC, alternative = 'less')  # Significant: p = 0.024
 
+# both groups
+value <- summary_choice_corrected$ChoiceChangeAB
+wilcox.test(value, alternative = 't')  
+
 # -----------------------------------------------------
 # Plot: Day 2 effect (Post - Pre) across aOFC and pOFC
 # -----------------------------------------------------
