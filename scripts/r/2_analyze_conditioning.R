@@ -31,7 +31,7 @@ out2 = conditioning_dat %>%
               strip = strip,
               labeller = custom_labeller) +
   scale_color_manual(values = use.col.sess) +
-  labs(x = "Runs", y = "P(Choosing rewarding stim)", fill = 'Session',
+  labs(x = "Blocks", y = "P(Choosing rewarding stim)", fill = 'Session',
        color = 'Session', linetype = 'Session') +
   common +
   theme(legend.position = 'inside',
@@ -188,7 +188,8 @@ disc_overall_day1 = ggplot(subject_cond_means, aes(x = Run, y = Choice, color = 
                width = 0.3, linewidth = 1) +  # SE bars
   coord_cartesian(ylim = c(0.4, 1)) +
   scale_color_manual(values = use.col.conds.day1) +
-  labs(x = "Runs", y = "P (Choosing rewarding stim)", color = "Condition", title = NULL) +
+  labs(x = "Blocks", 
+       y = "Percentage of selecting \n odor-predicting choice", color = "Condition", title = NULL) +
   common  # include your shared theme etc.
 
 conditioning_dat$Cond_day1 <- as.factor(conditioning_dat$Cond_day1)
@@ -205,34 +206,67 @@ pdf(file.path(FigPaperDir,'Conditioning_day1.pdf'),8,4)
 print(disc_overall_day1)
 dev.off()
 
-## if using all 3 conditions
 
-subject_cond_means <- conditioning_dat %>%
-  group_by(SubID, Run, StimLoc, Cond) %>%
+subject_sess_means <- conditioning_dat %>%
+  group_by(SubID, Run, StimLoc, Sess) %>%
   summarise(Choice = mean(OdorChosen, na.rm = TRUE), .groups = "drop")
 
-ggplot(subject_cond_means, aes(x = Run, y = Choice, color = Cond)) +
-  facet_wrap(~StimLoc, scales = 'free_y', strip.position = "top") +  # Same layout as before
-  geom_line(aes(group = interaction(SubID, Cond)), alpha = 0.3, linewidth = 0.3) +  # individual subjects
-  stat_summary(aes(group = Cond), fun = mean, geom = "line", linewidth = 1.5) +  # group-level mean per condition
-  stat_summary(aes(group = Cond), fun.data = mean_se, geom = "errorbar",
+disc_overall_by_sess = ggplot(subject_sess_means, aes(x = Run, y = Choice, color =factor(Sess))) +
+  facet_wrap2(~StimLoc, scales = 'free_y', strip = strip) +  # Same layout as before
+  geom_line(aes(group = interaction(SubID, Sess)), alpha = 0.3, linewidth = 0.3) +  # individual subjects
+  stat_summary(aes(group = Sess), fun = mean, geom = "line", linewidth = 1.5) +  # group-level mean per condition
+  stat_summary(aes(group = Sess), fun.data = mean_se, geom = "errorbar",
                width = 0.3, linewidth = 1) +  # SE bars
   coord_cartesian(ylim = c(0.4, 1)) +
-  scale_color_manual(values = use.col.conds) +
-  labs(x = "Runs", y = "P (Choosing rewarding stim)", color = "Condition", title = NULL) +
-  common  # include your shared theme etc.
+  scale_color_manual(values = use.col.sess) +
+  labs(x = "Blocks", 
+       y = "Percentage of selecting \n odor-predicting choice", color = "Condition", title = NULL) +
+  common
+
+pdf(file.path(FigPaperDir,'Conditioning_by_sess.pdf'),8,4)
+print(disc_overall_by_sess)
+dev.off()
 
 
-# Make sure Cond and Run are factors (if appropriate)
-conditioning_dat$Cond <- as.factor(conditioning_dat$Cond)
-conditioning_dat$Run <- as.numeric(conditioning_dat$Run)
+conditioning_dat_run5 = subset(conditioning_dat,Run==5)
 
-# Mixed-effects logistic model
-m_cond <- glmer(OdorChosen ~ Cond * Run + (1 | SubID), 
-                data = conditioning_dat, 
+m_cond <- glmer(OdorChosen ~ Cond_day1 + (1 | SubID), 
+                data = conditioning_dat_run5, 
                 family = binomial)
-
-# Model summary
 summary(m_cond)
+
+library(dplyr)
+library(tidyr)
+
+# Step 1: Filter to Run 5 only
+run5_data <- conditioning_dat_run5 %>%
+  filter(Run == 5)
+
+# Step 2: Compute mean choice per subject per condition
+agg_data <- run5_data %>%
+  group_by(SubID, StimLoc, Cond_day1) %>%
+  summarise(mean_choice = mean(OdorChosen), .groups = "drop")
+
+# Step 3: Split by StimLoc
+agg_aofc <- agg_data %>% filter(StimLoc == "aOFC") %>%
+  pivot_wider(names_from = Cond_day1, values_from = mean_choice)
+
+agg_pofc <- agg_data %>% filter(StimLoc == "pOFC") %>%
+  pivot_wider(names_from = Cond_day1, values_from = mean_choice)
+
+# Step 4: Run paired t-tests
+t_aofc <- t.test(agg_aofc$cTBS, agg_aofc$sham, paired = TRUE)
+t_pofc <- t.test(agg_pofc$cTBS, agg_pofc$sham, paired = TRUE)
+
+# Step 5: Print results
+cat("aOFC:\n")
+print(t_aofc)
+
+cat("\npOFC:\n")
+print(t_pofc)
+
+
+
+
 
 

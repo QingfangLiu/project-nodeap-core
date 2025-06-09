@@ -32,6 +32,12 @@ strip <- strip_themed(
   text_y = elem_list_text(color = "white", face = "bold", size = 16)
 )
 
+p_values <- data.frame(
+  y_start = 1.8,     
+  y_end = 2,
+  y_low = 1.6
+)
+
 p1=ggplot(Odor_ratings_dat,aes(x=IfDevalue,y=Pleasant)) +
   geom_boxplot(aes(linetype = PrePost),
                width = 0.6, alpha = 0.4, position = position_dodge(0.75),
@@ -45,6 +51,25 @@ p1=ggplot(Odor_ratings_dat,aes(x=IfDevalue,y=Pleasant)) +
               scales = 'fixed',
               strip = strip,
               axes = 'all') +
+  geom_segment(
+    data = p_values,aes(x = 1, xend = 2, y = y_start, yend = y_start),
+    inherit.aes = FALSE, color = "black",linewidth = 0.5) +
+  geom_segment(
+    data = p_values,aes(x = 1, xend = 1, y = y_low, yend = y_start),
+    inherit.aes = FALSE, color = "black",linewidth = 0.5) +
+  geom_segment(
+    data = p_values,aes(x = 2, xend = 2, y = y_low, yend = y_start),
+    inherit.aes = FALSE, color = "black",linewidth = 0.5) +
+  geom_text(
+    data = p_values,
+    aes(
+      x = 1.5,         # Position the label between the two groups
+      y = y_end,     # Use the pre-calculated y position
+      label = '***'
+    ),
+    inherit.aes = FALSE,
+    size = 3.5
+  ) +
   labs(x = NULL, y = "Odor pleasantness", title = NULL) + common +
   theme(legend.position = 'inside',
         legend.background = element_rect(fill = NA, color = NA),
@@ -158,3 +183,31 @@ anova(model0,model4)
 SelectSate_dat = rereduced
 Sate_dat = reduced
 save(SelectSate_dat,Sate_dat,file = '../ProcessedData/SelectSate_dat.RData')
+
+
+library(dplyr)
+
+# Group by StimLoc and Cond, then apply t-test on Didx
+t_results <- rereduced %>%
+  group_by(StimLoc, Cond) %>%
+  summarise(
+    n = n(),
+    t_result = list(t.test(Didx)),
+    .groups = "drop"
+  )
+
+# Extract t-test stats into readable format
+t_results_clean <- t_results %>%
+  rowwise() %>%
+  mutate(
+    t_stat = t_result$statistic,
+    df = t_result$parameter,
+    p_value = t_result$p.value,
+    mean = t_result$estimate,
+    conf_low = t_result$conf.int[1],
+    conf_high = t_result$conf.int[2]
+  ) %>%
+  select(-t_result)
+
+# View the table
+print(t_results_clean)
