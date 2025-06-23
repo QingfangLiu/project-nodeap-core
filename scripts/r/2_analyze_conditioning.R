@@ -189,7 +189,7 @@ disc_overall_day1 = ggplot(subject_cond_means, aes(x = Run, y = Choice, color = 
   coord_cartesian(ylim = c(0.4, 1)) +
   scale_color_manual(values = use.col.conds.day1) +
   labs(x = "Blocks", 
-       y = "Percentage of selecting \n odor-predicting choice", color = "Condition", title = NULL) +
+       y = "Percentage of selecting \n odor-predicting stimulus", color = "Condition", title = NULL) +
   common  # include your shared theme etc.
 
 conditioning_dat$Cond_day1 <- as.factor(conditioning_dat$Cond_day1)

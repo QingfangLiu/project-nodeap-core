@@ -72,9 +72,17 @@ strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
 
 c2 = summary_choice_ss_fitted %>%
   ggplot(aes(x=Cond,y=avg_fitted_post_meal)) +
-  geom_line(aes(group=SubID), position = pd, linewidth = 0.5, color = 'darkgray') +
-  geom_boxplot(aes(fill=Cond),width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
+  geom_line(aes(group=SubID), position = pd_dodge, linewidth = 0.5, color = 'darkgray') +
+  geom_boxplot(aes(fill = Cond), 
+               width = 0.6, fatten = NULL,
+               outlier.alpha = 0, 
+               alpha = 0.4) +
+  stat_summary(fun = mean, geom = "crossbar", 
+               fun.min = mean, fun.max = mean,  # makes top = bottom = mean
+               width = 0.6,                     # controls horizontal bar width
+               color = "black", 
+               fatten = 0)  +                     # removes vertical bar ends
+  geom_jitter(aes(color=Cond,group=SubID), position = pd_jitter, 
               size = 2, alpha = 0.8) +
   geom_segment(
     data = p_values,aes(x = 1, xend = 2, y = y_start, yend = y_start),
