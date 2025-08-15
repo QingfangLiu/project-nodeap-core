@@ -141,6 +141,32 @@ dev.off()
 
 
 
+library(dplyr)
+library(ggplot2)
+
+# Filter only the two conditions of interest
+plot_data <- use.dat.aOFC %>%
+  filter(Cond %in% c("sham-sham", "cTBS-sham")) %>%
+  group_by(SubID, Sess, StimOrder_day1, Cond) %>%
+  #reframe(mean = mean(Choice,na.rm=T)) %>%
+  reframe(mean = mean(fitted_choice,na.rm=T))
+
+# Plot
+ggplot(plot_data, aes(x = Sess, y = mean, fill = Cond)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA, aes(group = as.factor(Sess))) +
+  geom_jitter(width = 0.2, alpha = 0.5) +  # optional: show individual points
+  facet_wrap(~ StimOrder_day1) +
+  scale_fill_manual(values = use.col.conds) +
+  labs(
+    title = NULL,
+    x = "Session number",
+    y = "Choosing sated odors"
+  ) +
+  common
+
+
+
+
 get_subject_summary <- function(data, stimloc_label) {
   data %>%
     dplyr::group_by(SubID, Cond) %>%

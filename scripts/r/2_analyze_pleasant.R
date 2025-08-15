@@ -125,6 +125,48 @@ pre_plea  <- subset(dat, PrePost == 'Pre-meal')$Pleasant
 post_plea <- subset(dat, PrePost == 'Post-meal')$Pleasant
 change_plea <- post_plea - pre_plea
 
+
+
+library(dplyr)
+library(ggplot2)
+library(emmeans)
+
+# Filter to pre-meal only
+dat_pre <- dat %>%
+  filter(PrePost == "Pre-meal")
+
+# Summary by session
+dat_pre %>%
+  group_by(Sess) %>%
+  summarise(
+    mean_pleasant = mean(Pleasant, na.rm = TRUE),
+    sd_pleasant   = sd(Pleasant, na.rm = TRUE),
+    n             = n_distinct(SubID)
+  )
+
+# Repeated measures ANOVA (within-subject across Sess)
+# Make Sess a factor for ANOVA
+dat_pre$Sess <- factor(dat_pre$Sess, levels = c(1, 2, 3))
+
+anova_result <- aov(Pleasant ~ Sess + Error(SubID/Sess), data = dat_pre)
+summary(anova_result)
+
+# Post-hoc pairwise comparisons
+emmeans(anova_result, pairwise ~ Sess, adjust = "bonferroni")
+
+# Plot
+ggplot(dat_pre, aes(x = Sess, y = Pleasant, group = SubID)) +
+  geom_line(alpha = 0.3) +
+  #geom_point(alpha = 0.5) +
+  stat_summary(fun = mean, geom = "point", size = 3, color = "red") +
+  #stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.1, color = "red") +
+  theme_minimal() +
+  labs(title = "Pleasantness of pre-meal odors across sessions",
+       y = "Pleasantness rating", x = "Session")
+
+
+
+
 reduced <- subset(dat, PrePost == 'Pre-meal') %>%
   mutate(
     PrePost = 'Change',

@@ -14,7 +14,7 @@ strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
 
 p_day1 = ggscatter(df_day1, 
           x = "TMS_effect_predicted", 
-          y = "day1_tms_effect", 
+          y = "day1_tms_effect_mri", 
           add = "reg.line", 
           conf.int = TRUE,
           cor.coef = TRUE, 
@@ -38,7 +38,7 @@ dev.off()
 df_day2 = read.csv(file.path(pro_mri_dir,"merged_day2_tms_effect_0.csv"))
 p_day2 = ggscatter(df_day2, 
           x = "TMS_effect_predicted", 
-          y = "day2_tms_effect", 
+          y = "day2_tms_effect_mri", 
           add = "reg.line", 
           conf.int = TRUE,
           cor.coef = TRUE, 
@@ -91,6 +91,12 @@ ggscatter(df_day2_more,
 # Load the data
 df <- read.csv(file.path(pro_mri_dir,"dist_summary_roi_0.csv"))  
 
+df <- df %>%
+  left_join(
+    ConnIdx %>% select(SubID, StimLoc) %>% distinct(),
+    by = c("subject" = "SubID")
+  )
+
 # Perform paired t-test
 t_test_result <- t.test(df$d_null_real, df$d_null_sham, paired = TRUE)
 
@@ -139,4 +145,25 @@ pdf(file.path(FigPaperDir,'TMS_mri_dist_comp.pdf'),3,3.5)
 print(p_comp_dist)
 dev.off()
 
+
+# Reshape to long format for ANOVA
+df_long <- df %>%
+  pivot_longer(
+    cols = c(d_null_sham, d_null_real),
+    names_to = "Condition",
+    values_to = "Distance"
+  )
+
+library(ez)  
+# Run mixed (within-subject) ANOVA
+anova_result <- ezANOVA(
+  data = df_long,
+  dv = Distance,
+  wid = subject,
+  within = .(Condition),
+  between = .(StimLoc),
+  detailed = TRUE
+)
+
+anova_result
 

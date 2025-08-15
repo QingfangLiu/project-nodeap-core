@@ -19,7 +19,7 @@ FigPaperDir = '/Users/liuq13/NODEAP_scripts/Figs_paper'
 pro_dat_dir = '/Users/liuq13/NODEAP_scripts/data_beh_processed'
 pro_mri_dir = '/Users/liuq13/NODEAP_scripts/data_mri_processed'
 
-#pd <- position_dodge(0.6) # set dodge width
+pd <- position_dodge(0.6) # set dodge width
 #pd <- position_jitterdodge(jitter.width = 0.1, dodge.width = 0.6, jitter.height = 0)
 
 pd_jitter <- position_jitterdodge(jitter.width = 0.000, dodge.width = 0.2, jitter.height = 0)
