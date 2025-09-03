@@ -33,6 +33,58 @@ summary(model_choice_1)
 
 use.dat.pOFC$fitted_choice <- fitted(model_choice_1, type = "response")
 
+# add in response to a reviewer
+
+# get unique subject IDs
+subs <- unique(use.dat.pOFC$SubID)
+
+# storage
+results <- data.frame(SubID = subs, p_value = NA)
+
+for (i in seq_along(subs)) {
+  # filter out one subject
+  dat_sub <- filter(use.dat.pOFC, SubID != subs[i])
+  
+  # fit the two models
+  m1 <- glmer(Choice ~ Cond + ValueDiff + Didx + base + (1 | SubID),
+              data = dat_sub, family = "binomial")
+  
+  m0 <- glmer(Choice ~ ValueDiff + Didx + base + (1 | SubID),
+              data = dat_sub, family = "binomial")
+  
+  # likelihood ratio test
+  lrt <- anova(m1, m0)
+  
+  # extract p-value (2nd row, "Pr(>Chisq)")
+  results$p_value[i] <- lrt$`Pr(>Chisq)`[2]
+}
+
+print(results)
+
+
+results_ordered <- results %>% arrange(p_value)
+print(results_ordered)
+
+# Summarize LOSO results
+summary_stats <- results %>%
+  summarise(
+    min_p   = min(p_value, na.rm = TRUE),
+    max_p   = max(p_value, na.rm = TRUE),
+    median_p = median(p_value, na.rm = TRUE),
+    mean_p   = mean(p_value, na.rm = TRUE)
+  )
+
+print(summary_stats)
+
+# Identify subjects with p > 0.05
+influential <- results %>%
+  filter(p_value > 0.05)
+
+print(influential)
+
+
+
+
 
 # aOFC group
 use.dat.aOFC = use_choice_dat_ss %>%
@@ -48,6 +100,47 @@ summary(model_choice_0)
 # everything else sig: Valuediff, Didx, base
 
 use.dat.aOFC$fitted_choice <- fitted(model_choice_0, type = "response")
+
+# get unique SubIDs for aOFC dataset
+subs <- unique(use.dat.aOFC$SubID)
+
+# storage
+results_aOFC <- data.frame(SubID = subs, p_value = NA)
+
+for (i in seq_along(subs)) {
+  # filter out one subject
+  dat_sub <- filter(use.dat.aOFC, SubID != subs[i])
+  
+  # fit full and reduced models
+  model1 <- glmer(Choice ~ Cond + ValueDiff + Didx + base + (1 | SubID),
+                  data = dat_sub, family = "binomial")
+  
+  model0 <- glmer(Choice ~ ValueDiff + Didx + base + (1 | SubID),
+                  data = dat_sub, family = "binomial")
+  
+  # likelihood ratio test
+  lrt <- anova(model1, model0, test = "Chisq")
+  
+  # store p-value (second row, "Pr(>Chisq)")
+  results_aOFC$p_value[i] <- lrt$`Pr(>Chisq)`[2]
+}
+
+# order by p-value
+results_aOFC <- results_aOFC %>% arrange(p_value)
+
+print(results_aOFC)
+
+# summary stats
+summary_stats_aOFC <- results_aOFC %>%
+  summarise(
+    min_p   = min(p_value, na.rm = TRUE),
+    max_p   = max(p_value, na.rm = TRUE),
+    median_p = median(p_value, na.rm = TRUE),
+    mean_p   = mean(p_value, na.rm = TRUE)
+  )
+
+print(summary_stats_aOFC)
+
 
 
 summary_choice_ss_fitted_pOFC = use.dat.pOFC %>%

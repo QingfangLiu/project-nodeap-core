@@ -16,7 +16,7 @@ p0=ggplot(Odor_ratings_dat,aes(x=IfDevalue,y=Pleasant)) +
   annotate("segment", x = 1, xend = 1, y = 9.8, yend = 10.5) +
   annotate("segment", x = 2, xend = 2, y = 9.8, yend = 10.5) +
   annotate("segment", x = 1, xend = 2, y = 10.5, yend = 10.5) +
-  annotate("text", x = 1.5, y = 11.3, label = "***", size = 4) +
+  annotate("text", x = 1.5, y = 11.3, label = "***", size = 6) +
   labs(x = NULL, y = "Odor pleasantness", title = NULL) + common +
   theme(legend.position = c(0.25, 0.15)) 
 
@@ -33,9 +33,9 @@ strip <- strip_themed(
 )
 
 p_values <- data.frame(
-  y_start = 1.8,     
-  y_end = 2,
-  y_low = 1.6
+  y_start = 10.8,     
+  y_text = 11,
+  y_low = 10
 )
 
 p1=ggplot(Odor_ratings_dat,aes(x=IfDevalue,y=Pleasant)) +
@@ -64,11 +64,11 @@ p1=ggplot(Odor_ratings_dat,aes(x=IfDevalue,y=Pleasant)) +
     data = p_values,
     aes(
       x = 1.5,         # Position the label between the two groups
-      y = y_end,     # Use the pre-calculated y position
+      y = y_text,     # Use the pre-calculated y position
       label = '***'
     ),
     inherit.aes = FALSE,
-    size = 3.5
+    size = 8
   ) +
   labs(x = NULL, y = "Odor pleasantness", title = NULL) + common +
   theme(legend.position = 'inside',
@@ -124,47 +124,6 @@ dat <- Odor_ratings_dat %>%
 pre_plea  <- subset(dat, PrePost == 'Pre-meal')$Pleasant
 post_plea <- subset(dat, PrePost == 'Post-meal')$Pleasant
 change_plea <- post_plea - pre_plea
-
-
-
-library(dplyr)
-library(ggplot2)
-library(emmeans)
-
-# Filter to pre-meal only
-dat_pre <- dat %>%
-  filter(PrePost == "Pre-meal")
-
-# Summary by session
-dat_pre %>%
-  group_by(Sess) %>%
-  summarise(
-    mean_pleasant = mean(Pleasant, na.rm = TRUE),
-    sd_pleasant   = sd(Pleasant, na.rm = TRUE),
-    n             = n_distinct(SubID)
-  )
-
-# Repeated measures ANOVA (within-subject across Sess)
-# Make Sess a factor for ANOVA
-dat_pre$Sess <- factor(dat_pre$Sess, levels = c(1, 2, 3))
-
-anova_result <- aov(Pleasant ~ Sess + Error(SubID/Sess), data = dat_pre)
-summary(anova_result)
-
-# Post-hoc pairwise comparisons
-emmeans(anova_result, pairwise ~ Sess, adjust = "bonferroni")
-
-# Plot
-ggplot(dat_pre, aes(x = Sess, y = Pleasant, group = SubID)) +
-  geom_line(alpha = 0.3) +
-  #geom_point(alpha = 0.5) +
-  stat_summary(fun = mean, geom = "point", size = 3, color = "red") +
-  #stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.1, color = "red") +
-  theme_minimal() +
-  labs(title = "Pleasantness of pre-meal odors across sessions",
-       y = "Pleasantness rating", x = "Session")
-
-
 
 
 reduced <- subset(dat, PrePost == 'Pre-meal') %>%
@@ -253,3 +212,72 @@ t_results_clean <- t_results %>%
 
 # View the table
 print(t_results_clean)
+
+
+
+
+library(dplyr)
+library(ggplot2)
+library(emmeans)
+
+# Filter to pre-meal only
+dat_pre <- dat %>%
+  filter(PrePost == "Pre-meal")
+
+# Summary by session
+dat_pre %>%
+  group_by(Sess) %>%
+  summarise(
+    mean_pleasant = mean(Pleasant, na.rm = TRUE),
+    sd_pleasant   = sd(Pleasant, na.rm = TRUE),
+    n             = n_distinct(SubID)
+  )
+
+# Repeated measures ANOVA (within-subject across Sess)
+# Make Sess a factor for ANOVA
+dat_pre$Sess <- factor(dat_pre$Sess, levels = c(1, 2, 3))
+
+anova_result <- aov(Pleasant ~ Sess + Error(SubID/Sess), data = dat_pre)
+summary(anova_result)
+
+# Post-hoc pairwise comparisons
+emmeans(anova_result, pairwise ~ Sess, adjust = "bonferroni")
+
+# Plot
+ggplot(dat_pre, aes(x = Sess, y = Pleasant, group = SubID)) +
+  geom_line(alpha = 0.3) +
+  #geom_point(alpha = 0.5) +
+  stat_summary(fun = mean, geom = "point", size = 3, color = "red") +
+  #stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.1, color = "red") +
+  theme_minimal() +
+  labs(title = "Pleasantness of pre-meal odors across sessions",
+       y = "Pleasantness rating", x = "Session")
+
+
+
+use_dat1 = subset(dat, PrePost=='Pre-meal' & IfDevalue=='sated')
+use_dat2 = subset(dat, PrePost=='Pre-meal' & IfDevalue=='non-sated')
+
+SelectSate_dat <- SelectSate_dat %>%
+  left_join(
+    use_dat1 %>% select(SubID, Sess, Pleasant_pre_sated = Pleasant),
+    by = c("SubID", "Sess")
+  )
+SelectSate_dat <- SelectSate_dat %>%
+  left_join(
+    use_dat2 %>% select(SubID, Sess, Pleasant_pre_non_sated = Pleasant),
+    by = c("SubID", "Sess")
+  )
+ggplot(SelectSate_dat, aes(y = Didx, x = Pleasant_pre_sated)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "black", alpha = 0.2) +
+  stat_cor(method = 'pearson',label.x = -2.5, label.y = -3) +
+  common +
+  labs(y = "Selective satiation effect \n (more negative is stronger)", 
+       x = "Pleasantness (pre-meal, sated)")
+
+ggplot(SelectSate_dat, aes(y = Didx, x = Pleasant_pre_non_sated)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  theme_minimal()
+

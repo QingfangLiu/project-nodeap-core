@@ -81,20 +81,34 @@ fc_df <- bind_rows(lapply(mat_files, parse_fc_file)) %>%
   ungroup()
 
 # do mixed effect modeling
-use_type = c('aOFC-conn-LPFC_Seed-aOFC','pOFC-conn-LPFC_Seed-pOFC','aOFC-conn-LPFC_pOFC-conn-LPFC')
+use_type = c('aOFC-conn-LPFC_Seed-aOFC',
+             'pOFC-conn-LPFC_Seed-pOFC',
+             'aOFC-conn-LPFC_Seed-pOFC',
+             'pOFC-conn-LPFC_Seed-aOFC',
+             'aOFC-conn-LPFC_pOFC-conn-LPFC')
 
 fc_df_select = fc_df %>%
   subset(Pair %in% use_type) %>%
   select(SubID,Session,Pair,FC) %>%
   mutate(NetworkType = case_when(
+  Pair %in% c("aOFC-conn-LPFC_Seed-pOFC", "pOFC-conn-LPFC_Seed-aOFC") ~ "diff network",
   Pair %in% c("aOFC-conn-LPFC_Seed-aOFC", "pOFC-conn-LPFC_Seed-pOFC") ~ "same network",
   Pair == "aOFC-conn-LPFC_pOFC-conn-LPFC" ~ "between LPFCs"
 ))
 
-fc_df_select$NetworkType <- factor(fc_df_select$NetworkType, levels = c("same network", "between LPFCs"))
+fc_df_select$NetworkType <- factor(fc_df_select$NetworkType, 
+                                   levels = c("same network", "between LPFCs", "diff network"))
 
-model0 <- lmer(FC ~ (1 | SubID), data = fc_df_select)
-model1 <- lmer(FC ~ NetworkType + (1 | SubID), data = fc_df_select)
+
+fc_df_select_use = subset(fc_df_select, NetworkType %in% c("same network", "between LPFCs"))
+model0 <- lmer(FC ~ (1 | SubID), data = fc_df_select_use)
+model1 <- lmer(FC ~ NetworkType + (1 | SubID), data = fc_df_select_use)
+anova(model0,model1)
+summary(model1)
+
+fc_df_select_use = subset(fc_df_select, NetworkType %in% c("diff network", "between LPFCs"))
+model0 <- lmer(FC ~ (1 | SubID), data = fc_df_select_use)
+model1 <- lmer(FC ~ NetworkType + (1 | SubID), data = fc_df_select_use)
 anova(model0,model1)
 summary(model1)
 
@@ -105,27 +119,35 @@ fc_subj_avg_same_network <- fc_df %>%
   group_by(SubID) %>%
   reframe(FC = mean(FC, na.rm = TRUE)) %>%
   mutate(type = 'same network') 
+
+fc_subj_avg_diff_network <- fc_df %>%
+  subset(Pair %in% c('aOFC-conn-LPFC_Seed-pOFC','pOFC-conn-LPFC_Seed-aOFC')) %>%
+  group_by(SubID) %>%
+  reframe(FC = mean(FC, na.rm = TRUE)) %>%
+  mutate(type = 'diff network') 
+
 fc_subj_avg_bt_LPFC <- fc_df %>%
   subset(Pair %in% 'aOFC-conn-LPFC_pOFC-conn-LPFC') %>%
   group_by(SubID) %>%
   reframe(FC = mean(FC, na.rm = TRUE)) %>%
   mutate(type = 'between LPFCs')
-fc_summary_stats <- rbind(fc_subj_avg_same_network,fc_subj_avg_bt_LPFC)
+fc_summary_stats <- rbind(fc_subj_avg_same_network,
+                          fc_subj_avg_diff_network,
+                          fc_subj_avg_bt_LPFC)
 
 
 ###################################
 
 ylow = 0.82; yhigh = 0.85; ytext = 0.86
+yylow = 0.68; yyhigh = 0.71; yytext = 0.72
 
 p1 = fc_summary_stats %>%
   mutate(type=factor(type,
-                     levels = c('same network','between LPFCs'),
-                     labels = c("Within\nnetwork", "Between\nLPFCs"))) %>%
+                     levels = c('same network','between LPFCs','diff network'),
+                     labels = c("Within\nnetwork", "Between\nLPFCs", "Cross\nnetwork"))) %>%
   ggplot(aes(x = type, y = FC)) +
   geom_line(aes(group = SubID), color = "gray", alpha = 0.8,
             position = position_dodge(0.2)) + 
-  geom_violinhalf(flip = c(1, 3),
-                  position = position_nudge(x = 0, y = 0)) +
   geom_boxplot(width = 0.4, outlier.shape = NA) +
   geom_jitter(aes(group = SubID), alpha = 0.5, 
               position = position_dodge(0.2)) + 
@@ -133,10 +155,14 @@ p1 = fc_summary_stats %>%
     limits = c(-0.25, 0.88),           # Set y-axis limits
     breaks = seq(-0.25, 1, by = 0.25)  # Set specific tick marks
   ) +
-  annotate("text", x=1.5, y=ytext, label='***') +
+  annotate("text", x=1.5, y=ytext, label='***',size=8) +
+  annotate("text", x=2.5, y=yytext, label='***',size=8) +
   annotate("segment",x = 1, xend = 1, y = ylow, yend = yhigh) +
   annotate("segment",x = 2, xend = 2, y = ylow, yend = yhigh) +
   annotate("segment",x = 1, xend = 2, y = yhigh, yend = yhigh) +
+  annotate("segment",x = 3, xend = 3, y = yylow, yend = yyhigh) +
+  annotate("segment",x = 2, xend = 2, y = yylow, yend = yyhigh) +
+  annotate("segment",x = 3, xend = 2, y = yyhigh, yend = yyhigh) +
   labs(y=NULL,x=NULL,title=NULL) +
   common
 
@@ -191,7 +217,7 @@ p2=fc_df_seed_stim %>%
   geom_jitter(aes(group = SubID), alpha = 0.5, 
               position = position_dodge(0.2)) +
   facet_wrap2(~Sphere2,axes = 'all',strip = strip, strip.position = 'left') +
-  annotate("text", x=1.5, y=ytext, label='***') +
+  annotate("text", x=1.5, y=ytext, label='***',size=8) +
   annotate("segment",x = 1, xend = 1, y = ylow, yend = yhigh) +
   annotate("segment",x = 2, xend = 2, y = ylow, yend = yhigh) +
   annotate("segment",x = 1, xend = 2, y = yhigh, yend = yhigh) +
@@ -204,8 +230,8 @@ p2=fc_df_seed_stim %>%
   theme(strip.background = element_blank(),
         strip.text = element_text(size = 16)) 
 
-pdf(file.path(FigPaperDir,'Fig_conn_seed_stim.pdf'),9.5,4)
-ggarrange(p2,p1,nrow = 1,widths = c(2.5,1),align = "h")
+pdf(file.path(FigPaperDir,'Fig_conn_seed_stim.pdf'),10,4)
+ggarrange(p2,p1,nrow = 1,widths = c(2.5,1.4),align = "h")
 dev.off()
 
 #############################################################

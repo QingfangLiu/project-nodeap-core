@@ -7,11 +7,10 @@ source('Setup.R')
 # for plotting and further statistical modeling.
 
 # 📥 Load data
-dat1 <- read.xlsx('../ProcessedData/Pleasant.xlsx')
-dat2 <- read.xlsx('../ProcessedData/Pleasant_NODEAP_17.xlsx')
+dat0 <- read.xlsx('../../data_input/Pleasant_all.xlsx')
 
 # 🧹 Combine and clean
-dat <- bind_rows(dat1, dat2) %>%
+dat <- dat0 %>%
   # Recode variables
   mutate(
     PrePost = mapvalues(PrePost, from = c(1, 2), to = c('Pre-meal', 'Post-meal')),
@@ -41,5 +40,5 @@ dat <- dat %>%
 
 # save the whole rating data for later use
 Odor_ratings_dat = dat
-save(Odor_ratings_dat,file = '../ProcessedData/Odor_ratings_dat.RData')
+save(Odor_ratings_dat,file = '../../data_beh_processed/Odor_ratings_dat.RData')
 

@@ -136,7 +136,7 @@ p_comp_dist = ggplot(df_long, aes(x = Condition, y = Distance)) +
       label = '*'
     ),
     inherit.aes = FALSE,
-    size = 3.5
+    size = 8
   ) +
   scale_x_discrete(labels = c("d_null_real" = "cTBS", "d_null_sham" = "sham")) +
   labs(title = NULL, y = "Distance to null", x = NULL) + common

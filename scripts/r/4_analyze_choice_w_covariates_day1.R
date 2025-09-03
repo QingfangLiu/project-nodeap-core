@@ -50,6 +50,53 @@ anova(model_choice_2,model_choice_0) # sess was not sig, p=0.14
 
 use.dat.pOFC$fitted_choice <- fitted(model_choice_0, type = "response")
 
+
+# unique subject IDs
+subs <- unique(use.dat.pOFC$SubID)
+
+# storage
+results_pOFC_null <- data.frame(SubID = subs, p_value = NA)
+
+for (i in seq_along(subs)) {
+  # filter out one subject
+  dat_sub <- filter(use.dat.pOFC, SubID != subs[i])
+  
+  # fit full and reduced models
+  m1 <- glmer(Choice ~ Sess + Cond + Didx + ValueDiff + base + (1 | SubID),
+              data = dat_sub, family = "binomial")
+  
+  m0 <- glmer(Choice ~ Sess + Didx + ValueDiff + base + (1 | SubID),
+              data = dat_sub, family = "binomial")
+  
+  # likelihood ratio test
+  lrt <- anova(m1, m0, test = "Chisq")
+  
+  # extract p-value (second row, "Pr(>Chisq)")
+  results_pOFC_null$p_value[i] <- lrt$`Pr(>Chisq)`[2]
+}
+
+# order by p-value
+results_pOFC_null <- results_pOFC_null %>% arrange(p_value)
+
+print(results_pOFC_null)
+
+# summary stats
+summary_stats_pOFC_null <- results_pOFC_null %>%
+  summarise(
+    min_p   = min(p_value, na.rm = TRUE),
+    max_p   = max(p_value, na.rm = TRUE),
+    median_p = median(p_value, na.rm = TRUE),
+    mean_p   = mean(p_value, na.rm = TRUE)
+  )
+
+print(summary_stats_pOFC_null)
+
+
+
+
+
+
+
 # aOFC subjects
 use.dat.aOFC = use_choice_dat_ss %>%
   subset(PrePost=='Post' & StimLoc=='aOFC' &
@@ -73,6 +120,41 @@ anova(model_choice_2,model_choice_3) # adding Cond*Sess improved model fit compa
 summary(model_choice_3)
 
 use.dat.aOFC$fitted_choice <- fitted(model_choice_3, type = "response")
+
+
+# unique subject IDs
+subs <- unique(use.dat.aOFC$SubID)
+
+# storage
+results_aOFC_null <- data.frame(SubID = subs, p_value = NA)
+
+for (i in seq_along(subs)) {
+  # filter out one subject
+  dat_sub <- filter(use.dat.aOFC, SubID != subs[i])
+  
+  # fit full and reduced models
+  m3 <- glmer(Choice ~ Cond * Sess + Didx + ValueDiff + base + (1|SubID), 
+                          data = dat_sub,family = 'binomial')
+  results_aOFC_null$p_value[i] = summary(m3)$coefficients["CondcTBS-sham", "Pr(>|z|)"]
+
+}
+
+results_aOFC_null <- results_aOFC_null %>% arrange(p_value)
+print(results_aOFC_null)
+
+# summary stats
+summary_stats_aOFC_null <- results_aOFC_null %>%
+  summarise(
+    min_p   = min(p_value, na.rm = TRUE),
+    max_p   = max(p_value, na.rm = TRUE),
+    median_p = median(p_value, na.rm = TRUE),
+    mean_p   = mean(p_value, na.rm = TRUE)
+  )
+
+print(summary_stats_aOFC_null)
+
+
+
 
 # calculate session-wise summary of choices
 summary_choice_ss_fitted_pOFC = use.dat.pOFC %>%
@@ -148,10 +230,22 @@ library(ggplot2)
 plot_data <- use.dat.aOFC %>%
   filter(Cond %in% c("sham-sham", "cTBS-sham")) %>%
   group_by(SubID, Sess, StimOrder_day1, Cond) %>%
-  #reframe(mean = mean(Choice,na.rm=T)) %>%
-  reframe(mean = mean(fitted_choice,na.rm=T))
+  reframe(mean = mean(Choice,na.rm=T)) 
+  #reframe(mean = mean(fitted_choice,na.rm=T))
 
 # Plot
+ggplot(plot_data, aes(x = Cond, y = mean, fill = Cond)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA, aes(group = as.factor(Cond))) +
+  geom_jitter(width = 0.2, alpha = 0.5) +  # optional: show individual points
+  facet_wrap(~ StimOrder_day1) +
+  scale_fill_manual(values = use.col.conds) +
+  labs(
+    title = NULL,
+    x = NULL,
+    y = "Choosing sated odors"
+  ) +
+  common + theme(legend.position = "none")
+
 ggplot(plot_data, aes(x = Sess, y = mean, fill = Cond)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA, aes(group = as.factor(Sess))) +
   geom_jitter(width = 0.2, alpha = 0.5) +  # optional: show individual points
@@ -159,10 +253,10 @@ ggplot(plot_data, aes(x = Sess, y = mean, fill = Cond)) +
   scale_fill_manual(values = use.col.conds) +
   labs(
     title = NULL,
-    x = "Session number",
+    x = NULL,
     y = "Choosing sated odors"
   ) +
-  common
+  common + theme(legend.position = "none")
 
 
 
