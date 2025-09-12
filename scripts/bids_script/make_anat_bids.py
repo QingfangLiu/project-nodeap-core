@@ -36,15 +36,13 @@ def pick_best_t1(choices):
     return sorted(choices, key=score)[0] if choices else None
 
 def deface_inplace(nifti_path: Path):
-    """Deface using FSL; write to _defaced then replace the original. Falls back to pydeface if needed."""
-    tmp = nifti_path.with_name(nifti_path.stem + "_defaced.nii.gz")
-    try:
-        subprocess.run(["fsl_deface", str(nifti_path), str(tmp)], check=True)
-    except FileNotFoundError:
-        subprocess.run(
-            [sys.executable, "-m", "pydeface", str(nifti_path), "--outfile", str(tmp), "--force"],
-            check=True
-        )
+    # write UNCOMPRESSED temp, then replace original .nii
+    tmp = nifti_path.with_name(nifti_path.stem + "_defaced.nii")   # <- .nii, not .nii.gz
+    subprocess.run(
+        [sys.executable, "-m", "pydeface", str(nifti_path),
+         "--outfile", str(tmp), "--force"],
+        check=True
+    )
     shutil.move(str(tmp), str(nifti_path))
 
 # -------- iterate subjects --------
