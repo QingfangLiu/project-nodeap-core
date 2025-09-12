@@ -5,6 +5,7 @@
 import re, gzip, shutil
 from pathlib import Path
 import pandas as pd
+import subprocess  # add this
 
 # ---- paths ----
 RAW_ROOT  = Path("/Volumes/X9Pro/NODEAP/MRI")
@@ -88,9 +89,10 @@ for orig_id, sub_id in mapping.items():
                 if out_bold.exists() and out_json.exists():
                     continue
 
-                # write .nii.gz
-                with open(src, "rb") as fin, gzip.open(out_bold, "wb") as fout:
-                    shutil.copyfileobj(fin, fout)
+                # Write an uncompressed copy first, then compress with system gzip
+                out_nii = out_bold.with_suffix("")  # change *.nii.gz → *.nii
+                shutil.copy2(src, out_nii)
+                subprocess.run(["gzip", "-n", str(out_nii)], check=True)
 
                 # copy sidecar json if available
                 sidecar = src.with_suffix(".json")
