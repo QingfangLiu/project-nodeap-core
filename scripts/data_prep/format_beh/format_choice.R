@@ -13,14 +13,18 @@
 ########################################################
 
 rm(list = ls())
-source('Setup.R')  # Load paths, libraries, custom colors, etc.
 
-# Load pre-meal and post-meal choice data (including NODEAP_17)
-choice_dat1 <- read.xlsx('../ProcessedData/Choices.xlsx')
-choice_dat2 <- read.xlsx('../ProcessedData/Choices_NODEAP_17.xlsx')
+# load_setup.R
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
+
+########################################################
+
+# Load probe choice data
+choice_dat <- read.xlsx(file.path(project_folder,'data_cleaned','Choices_all.xlsx'))
 
 # Combine and recode variables
-choice_dat <- rbind(choice_dat1, choice_dat2) %>%
+choice_dat <- choice_dat %>%
   mutate(
     PrePost = mapvalues(PrePost, from = c(1, 2), to = c('Pre', 'Post')),
     StimLoc = mapvalues(StimLoc, from = c('Posterior', 'Anterior'), to = c('pOFC', 'aOFC')),

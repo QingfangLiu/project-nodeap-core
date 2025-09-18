@@ -1,6 +1,9 @@
 
 rm(list = ls())
-source('Setup.R')
+
+# load_setup.R
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
 # This script loads and preprocesses pleasantness rating data,
 # recodes relevant variables for analysis, and prepares the data

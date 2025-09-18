@@ -97,25 +97,3 @@ pdf(file.path(FigPaperDir,'Day2_TMS_ChoiceSatedOdor_Changes_by_order.pdf'),11,8)
 print(c2)
 dev.off()
 
-
-## similarly plot Day 1 TMS effect
-# but looking confusing
-strip = strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
-                     text_x = elem_list_text(color = 'white',face = "bold",size = 16))
-summary_choice_corrected %>%
-  subset(Cond %in% c('sham-sham','cTBS-sham')) %>%
-  ggplot(aes(x=Cond,y=ChoiceChangeAB)) +
-  geom_line(aes(group=SubID), position = pd, linewidth = 0.5, color = 'darkgray') +
-  geom_boxplot(aes(fill=Cond),width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
-              size = 2, alpha = 0.8) +
-  facet_wrap2(~StimLoc,scales = 'free',strip = strip) +
-  scale_color_manual(values = use.col.conds) +
-  scale_fill_manual(values = use.col.conds) +
-  labs(x = NULL, title = NULL, y = "Choice of sated odor \n (post-pre meal)") + 
-  common +
-  coord_cartesian(ylim = c(-1,1.2)) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
-  theme(legend.position = "none")
-
-

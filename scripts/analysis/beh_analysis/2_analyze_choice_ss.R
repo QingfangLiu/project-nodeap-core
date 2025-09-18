@@ -18,11 +18,12 @@
 
 rm(list = ls())
 
-project_folder <- "/Users/liuq13/project-nodeap-core" 
+# load_setup.R
+project_folder <- "/Users/liuq13/project-nodeap-core"
 source(file.path(project_folder, "scripts", "utils", "Setup.R"))
-# Minimal path helper
-p <- function(...) file.path(project_folder, ...)
-processed_dir <- p("data_beh_processed") 
+
+# dir of processed beh data
+processed_dir <- file.path(project_folder,"data_beh_processed")
 
 # Load full choice dataset
 load(file = file.path(processed_dir, 'choice_dat.RData'))
