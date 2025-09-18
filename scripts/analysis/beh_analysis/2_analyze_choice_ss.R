@@ -17,10 +17,15 @@
 
 
 rm(list = ls())
-source('Setup.R')  # Load paths, libraries, and any global settings
+
+project_folder <- "/Users/liuq13/project-nodeap-core" 
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
+# Minimal path helper
+p <- function(...) file.path(project_folder, ...)
+processed_dir <- p("data_beh_processed") 
 
 # Load full choice dataset
-load(file = file.path(pro_dat_dir, 'choice_dat.RData'))
+load(file = file.path(processed_dir, 'choice_dat.RData'))
 
 # Step 1: Filter for sweet-savory choices (ChoiceType == 3)
 choice_dat_ss <- choice_dat %>%
@@ -90,8 +95,8 @@ pcorr3 <- ggplot(df_pre_post_summary, aes(x = post_A, y = post_B)) +
   common +
   theme(legend.position = 'none')
 
-pdf(file.path(FigPaperDir, 'Choice_corr_paper.pdf'), width = 8, height = 8)
-ggarrange(pcorr1, pcorr2, pcorr3, ncol = 2, nrow = 2)
+pdf(file.path(p("Figs_paper"), 'Choice_corr_paper.pdf'), width = 14, height = 4)
+ggarrange(pcorr1, pcorr2, pcorr3, ncol = 3, nrow = 1)
 dev.off()
 
 # Step 5: Compute average choice change (from pre-meal to post-meal)
