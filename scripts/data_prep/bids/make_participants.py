@@ -79,8 +79,6 @@ participants_json = {
   "original_id": {"Description": "Original subject code (e.g., NODEAP_06)"},
   "sex": {"Description": "Biological sex of participant", "Levels": {"M": "Male","F": "Female","O": "Other"}},
   "age": {"Description": "Age of participant at time of experiment","Units": "years"},
-  "race": {"Description": "Race as reported by participant"},
-  "ethnicity": {"Description": "Ethnicity as reported by participant"},
   "group": {"Description": "Stimulation target group","Levels": {"aOFC": "Anterior OFC","pOFC": "Posterior OFC"}},
   "meal_order": {"Description": "First meal condition","Levels": {"Sweet": "Sweet meal","Savory": "Savory meal"}},
   "tms_order": {"Description": "Counterbalanced TMS order code"}
@@ -90,7 +88,6 @@ with open(out_json, "w") as f:
 
 print(f"✅ Saved {out_tsv}")
 print(f"✅ Saved {out_json}")
-
 
 
 desc = {
@@ -106,17 +103,20 @@ desc = {
     "Geoffrey Schoenbaum",
     "Thorsten Kahnt"
   ],
-  "Acknowledgements": "We thank all study participants and lab members.",
-  "HowToAcknowledge": "Please cite our paper (add DOI when available).",
+  "Acknowledgements": "We thank all study participants and lab members for their contributions. This work was supported by National Institute on Deafness and Other Communication Disorders grant R01DC015426 (to T.K.) and the Intramural Research Program at the National Institute on Drug Abuse (ZIA DA000642 to T.K. and DA000587 to G.S.). This research was supported in part by the Intramural Research Program of the National Institutes of Health (NIH). The contributions of the NIH authors are considered Works of the United States Government. The findings and conclusions presented in this dataset are those of the authors and do not necessarily reflect the views of the NIH or the U.S. Department of Health and Human Services.",
+  "HowToAcknowledge": "Please cite our paper: Liu et al., 'Distinct contributions of anterior and posterior orbitofrontal cortex to outcome-guided behavior', *Current Biology* (in press). Add DOI when available.",
   "Funding": [
-    "National Institutes of Health [grant number if applicable]",
-    "Other funding sources"
+    "NIH NIDCD R01DC015426 (to T.K.)",
+    "NIH NIDA ZIA DA000642 (to T.K.)",
+    "NIH NIDA DA000587 (to G.S.)",
+    "Intramural Research Program of the NIH"
   ],
   "ReferencesAndLinks": [
     "https://openneuro.org",
     "https://bids.neuroimaging.io/"
   ]
 }
+
 
 out_desc = out_dir / "dataset_description.json"
 with open(out_desc, "w") as f:
