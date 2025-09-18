@@ -22,7 +22,7 @@ org.columns = org.columns.str.strip()
 coll.columns = coll.columns.str.strip()
 
 # ---- Select relevant columns ----
-org  = org[["Subject", "Sex", "Age", "Race", "Ethnicity"]].copy()
+org  = org[["Subject", "Sex", "Age"]].copy()
 coll = coll[["Subject", "Anterior/Posterior", "Sweet/Savory", "Order"]].copy()
 
 # normalize Subject *cell values* to prevent merge mismatches (e.g., trailing spaces)
@@ -46,8 +46,9 @@ df = df.rename(columns={
 
 # ---- Normalize values ----
 df["sex"] = df["sex"].astype(str).str.upper().str[0]   # M/F
-df["race"] = df["race"].astype(str).str.replace(" ", "_")
-df["ethnicity"] = df["ethnicity"].astype(str).str.replace(" ", "_")
+
+# Round age to nearest integer
+df["age"] = df["age"].round(0).astype(int)
 
 def map_group(v):
     s = str(v).lower()
