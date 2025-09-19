@@ -7,7 +7,7 @@ source('Setup.R')
 SubInfo = read.xlsx('../ProcessedData/SubConds.xlsx')
 Subs = SubInfo$SubID[SubInfo$Include==1]
 
-# load SNRs vals from matlab
+# load motion vals fd from matlab
 matfile = '../ProcessedData/motion_subs_sessions.mat'
 matdat = readMat(matfile)
 all.ctr.badvol = matdat$all.ctr.badvol
@@ -56,7 +56,7 @@ use_df = df_motion %>%
   mutate(time = as.numeric(factor(Sess,levels = unique(Sess)))) # add time variable
 
 # how motion varies with TMS types?
-p1=use_df %>%
+use_df %>%
   ggplot(aes(x=TMS_types,y=motion,fill=TMS_types)) +
   geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
   geom_jitter(aes(color=TMS_types,group=TMS_types), 
@@ -82,27 +82,5 @@ summary(model1)
 
 model2 <- lmer(motion ~ TMS_types + StimLoc + (1|SubID), data = use_df)
 anova(model2,model0) 
-
-use_df %>%
-  ggplot(aes(x=TMS_types,y=motion,fill=TMS_types)) +
-  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  geom_jitter(aes(color=TMS_types,group=TMS_types), 
-              position = position_jitterdodge(dodge.width = 0.6, 
-                                              jitter.width = 0.3),
-              size = 0.5, alpha = 0.4) +
-  facet_wrap(~StimLoc) +
-  labs(title = '',y = 'Framewise Displacement (mm)', x = '') +
-  common
-
-# how motion changes with sessions
-use_df %>%
-  ggplot(aes(x=Sess,y=motion,fill=Sess)) +
-  geom_boxplot(width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  geom_jitter(aes(color=Sess,group=Sess), 
-              position = position_jitterdodge(dodge.width = 0.6, 
-                                              jitter.width = 0.3),
-              size = 0.5, alpha = 0.4) +
-  labs(title = '',y = 'Framewise Displacement (mm)', x = '') +
-  common
   
 
