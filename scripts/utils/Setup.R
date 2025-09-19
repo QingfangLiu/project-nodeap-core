@@ -15,7 +15,8 @@ library(tidyverse)
 library(ggh4x) # tweaking ggplots (e.g. facets)
 library(grid)  # manually adding panel/label names with shade
 
-FigPaperDir = '/Users/liuq13/NODEAP_scripts/Figs_paper'
+project_folder <- "/Users/liuq13/project-nodeap-core"
+FigPaperDir = file.path(project_folder,'figs_paper')
 
 pd <- position_dodge(0.6) # set dodge width
 #pd <- position_jitterdodge(jitter.width = 0.1, dodge.width = 0.6, jitter.height = 0)

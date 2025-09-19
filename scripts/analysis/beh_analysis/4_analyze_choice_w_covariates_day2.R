@@ -411,23 +411,3 @@ anova(model_choice_2,model_choice_0)
 summary(model_choice_2)
 # sig: TMS&Loc interaction, Didx, ValueDiff, base
 
-# tried plotting use the interaction model
-use.dat$fitted_choice <- fitted(model_choice_2, type = "response")
-summary_choice_ss_fitted = use.dat %>%
-  group_by(SubID,StimLoc,Cond,Sess) %>%
-  reframe(avg_fitted_post_meal=mean(fitted_choice,na.rm = T)) 
-
-summary_choice_ss_fitted %>%
-  ggplot(aes(x=Cond,y=avg_fitted_post_meal)) +
-  geom_line(aes(group=SubID), position = pd, linewidth = 0.5, color = 'darkgray') +
-  geom_boxplot(aes(fill=Cond),width = 0.6, outlier.alpha = 0, alpha = 0.4) +
-  geom_jitter(aes(color=Cond,group=SubID), position = pd, 
-              size = 2, alpha = 0.8) +
-  facet_wrap2(~StimLoc,strip = strip) +
-  scale_color_manual(values = use.col.conds) +
-  scale_fill_manual(values = use.col.conds) + common 
-
-
-
-
-

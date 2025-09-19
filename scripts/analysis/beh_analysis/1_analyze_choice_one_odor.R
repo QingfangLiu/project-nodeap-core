@@ -1,15 +1,43 @@
 
-##############################
-# only look at choice with one odor and one air
+
+############################################################
+# One-Odor (vs Air) Choices — Meal Effect & Sated Status
+#
+# INPUT
+# - beh_data_processed/choice_dat.RData  (trial-level choices)
+#   Loaded via project setup in scripts/utils/Setup.R
+#
+# WHAT THIS SCRIPT DOES
+# - Filters to one-odor vs air trials (sweet=1, savory=2).
+# - Labels each trial as **sated** vs **non-sated** based on whether
+#   the odor type matches the devalued outcome for that subject/session.
+# - Summarizes P(choose odor vs air) by Pre/Post and OdorType.
+# - Draws a box+jitter plot (collapsed across sessions) comparing
+#   Pre vs Post and sated vs non-sated.
+# - Fits GLMMs (binomial) at the trial level to test:
+#   (i) Pre vs Post change; (ii) interaction with OdorType.
+#
+# OUTPUTS
+# - Figure P(choose odor) by OdorType with Pre/Post overlay.
+# - not included in the paper
+
+############################################################
 
 # ChoiceType: 1,2 (1: sweet, 2:savory)
 # ChosenOdor: 0,1 (1 for selecting odor)
 
-# load choice data (in full)
+# --- One-Odor vs Air Choices: Effect of Meal & Sated Status -------------------
 
 rm(list = ls())
-source('Setup.R')
-load(file = '../ProcessedData/choice_dat.RData')
+
+# Setup & paths
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
+
+processed_dir <- file.path(project_folder, "beh_data_processed")
+
+# Load full trial-level choice data
+load(file = file.path(processed_dir, "choice_dat.RData"))
 
 choice_dat_one = choice_dat %>%
   subset(ChoiceType<3) %>%
@@ -20,8 +48,8 @@ summary_choice_one = choice_dat_one %>%
   group_by(SubID,StimLoc,Cond,PrePost,OdorType) %>%
   reframe(Choice=mean(ChosenOdor,na.rm = T))
 
-# collapsing across sessions
-c0 = summary_choice_one %>%
+# Box + jitter: P(choose odor vs air) by OdorType, Pre vs Post (collapsed across sessions)
+summary_choice_one %>%
   ggplot(aes(x=OdorType,y=Choice)) +
   geom_boxplot(aes(linetype = PrePost),outlier.alpha = 0,
                alpha=0.4) +
@@ -40,12 +68,9 @@ c0 = summary_choice_one %>%
   labs(x = NULL, title = NULL, y = "Choice of odor (vs. air)") + common +
   theme(legend.position = 'none')
 
-pdf(file.path(FigPaperDir,'Day2_ChoiceOneOdor.pdf'),4,4)
-print(c0)
-dev.off()
 
 
-# use trial-level data 
+# Trial-level GLMMs
 # test: if less odor choices with sated odor
 model_choice_0 <- glmer(ChosenOdor ~ (1|SubID), 
                         data = choice_dat_one,family = 'binomial')

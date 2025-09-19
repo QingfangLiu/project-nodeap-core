@@ -1,19 +1,48 @@
 
-# This script analyzes sweet-savory odor choices to assess the effect of TMS on decision-making.
-# 
-# Main steps:
-# 1. Load and filter the raw dataset to include only sweet-savory (ChoiceType == 3) trials.
-# 2. Create a binary choice outcome indicating selection of the sated odor.
-# 3. Summarize choices at the session level (by subject, condition, and timepoint).
-# 4. Visualize pre/post-meal choice correlations across conditions using ggplot.
-# 5. Compute an average choice change score (post - pre) for Set A and Set B trials.
-# 6. Generate a cleaned summary dataset for downstream statistical modeling.
-# 7. Compute and integrate subject-level baseline preference into trial-level data for modeling.
-# 
-# Outputs:
-# - Session-level summary with choice change scores.
-# - Trial-level dataset with baseline bias.
-# - Correlation plots saved to PDF.
+############################################################
+# Sweet–Savory Choice Analysis
+#
+# PURPOSE
+# Analyze sweet–savory (ChoiceType == 3) odor choices to quantify
+# TMS effects on choosing the sated odor, and produce summary
+# datasets + figures for downstream modeling and the paper.
+#
+# INPUTS
+# - Setup + globals: scripts/utils/Setup.R
+# - Trial-level choices (RData):   beh_data_processed/choice_dat.RData
+#
+# OUTPUT DATASETS (RData, in beh_data_processed/)
+# - Summary_Choice_corrected_dat.RData
+#     Session-level summary per SubID/Cond/Sess with
+#     ChoiceChangeAB = ((post_A + post_B)/2) − pre_A.
+# - choice_dat_ss_w_base.RData
+#     Trial-level sweet–savory data with a subject×condition
+#     baseline column (pre-meal choice rate).
+# - pre_choice_df_sated_pref_ss.RData
+#     Subject×condition baseline table used for joins.
+#
+# FIGURES (PDF, in FigPaperDir)
+# - Choice_corr_paper.pdf  (3 panels)
+#     A: pre-meal (Set A)  vs post-meal (Set A)  — Pearson r + LM fit
+#     B: pre-meal (Set A)  vs post-meal (Set B)  — Pearson r + LM fit
+#     C: post-meal (Set A) vs post-meal (Set B)  — Pearson r + LM fit
+# - choice_sated_day1.pdf
+#     Box + jitter of P(Choosing sated) by Cond (sham–sham, cTBS–sham),
+#     faceted by StimLoc; Pre vs Post indicated by linetype/shape.
+# - choice_sated_day2.pdf
+#     Box + jitter of P(Choosing sated) by Cond (sham–sham, sham–cTBS),
+#     faceted by StimLoc; Pre vs Post indicated by linetype/shape.
+#
+# KEY STEPS (brief)
+# 1) Filter to sweet–savory trials; define Choice = 1 if chosen odor
+#    equals the devalued (sated) odor.
+# 2) Aggregate to session level (mean Choice, mean RT).
+# 3) Build correlation dataset (pre_A, post_A, post_B) and plot 3 correlations.
+# 4) Compute ChoiceChangeAB and save session-level summary.
+# 5) Compute subject×condition pre-meal baseline; join back to trials;
+#    save trial-level with baseline and the baseline table.
+############################################################
+
 
 
 rm(list = ls())
@@ -23,7 +52,7 @@ project_folder <- "/Users/liuq13/project-nodeap-core"
 source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
 # dir of processed beh data
-processed_dir <- file.path(project_folder,"data_beh_processed")
+processed_dir <- file.path(project_folder,"beh_data_processed")
 
 # Load full choice dataset
 load(file = file.path(processed_dir, 'choice_dat.RData'))
@@ -96,7 +125,7 @@ pcorr3 <- ggplot(df_pre_post_summary, aes(x = post_A, y = post_B)) +
   common +
   theme(legend.position = 'none')
 
-pdf(file.path(p("Figs_paper"), 'Choice_corr_paper.pdf'), width = 14, height = 4)
+pdf(file.path(FigPaperDir, 'Choice_corr_paper.pdf'), width = 14, height = 4)
 ggarrange(pcorr1, pcorr2, pcorr3, ncol = 3, nrow = 1)
 dev.off()
 
@@ -108,7 +137,8 @@ summary_choice_corrected <- summary_choice_ss %>%
   select(SubID, StimLoc, StimOrder, Cond, Sess, StimOrder_day1, StimOrder_day2) %>%
   mutate(ChoiceChangeAB = avg_changeAB)
 
-save(summary_choice_corrected, file = '../ProcessedData/Summary_Choice_corrected_dat.RData')
+save(summary_choice_corrected, 
+     file = file.path(processed_dir,'Summary_Choice_corrected_dat.RData'))
 
 # Step 6: Add subject/session-wise baseline (pre-meal bias) to trial-level data
 pre_choice_df <- summary_choice_ss %>%
@@ -119,11 +149,12 @@ pre_choice_df <- summary_choice_ss %>%
 choice_dat_ss_w_base <- choice_dat_ss %>%
   left_join(pre_choice_df, by = c('SubID', 'Cond'))
 
-save(choice_dat_ss_w_base, file = '../ProcessedData/choice_dat_ss_w_base.RData')
-save(pre_choice_df, file = '../ProcessedData/pre_choice_df_sated_pref_ss.RData')
+save(choice_dat_ss_w_base,
+     file = file.path(processed_dir, 'choice_dat_ss_w_base.RData'))
+save(pre_choice_df,
+     file = file.path(processed_dir, 'pre_choice_df_sated_pref_ss.RData'))
 
-
-# new plots
+# draw raw plots of the sated effect without any covariates considered
 
 summary_choice_ss_day1 <- choice_dat_ss %>%
   filter(Cond %in% c('sham-sham','cTBS-sham')) %>%

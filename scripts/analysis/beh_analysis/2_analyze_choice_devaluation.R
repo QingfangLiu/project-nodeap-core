@@ -10,11 +10,21 @@
 # - Plot choice change separately for aOFC and pOFC stimulation sites
 #######################################################
 
+# ------------------------------------------------------------------------------
+# Setup
+# ------------------------------------------------------------------------------
 rm(list = ls())
-source('Setup.R')  # Load paths, libraries, and custom settings
 
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))  # paths, libs, theme
+
+processed_dir <- file.path(project_folder, "beh_data_processed")
+
+# ------------------------------------------------------------------------------
 # Load precomputed subject-level choice change data
-load(file = file.path(pro_dat_dir, 'Summary_Choice_corrected_dat.RData'))
+# ------------------------------------------------------------------------------
+load(file = file.path(processed_dir, "Summary_Choice_corrected_dat.RData"))
+
 
 # -----------------------------------------------------
 # Statistical testing: devaluation effect within each TMS target
@@ -43,7 +53,7 @@ muh_grob <- rectGrob(
 )
 
 # Violin + boxplot of change scores by stimulation site
-s1 <- summary_choice_corrected %>%
+summary_choice_corrected %>%
   ggplot(aes(x = StimLoc, y = ChoiceChangeAB)) +
   geom_violin() +
   geom_boxplot(width = 0.2, outlier.alpha = 0, alpha = 0.4) +
@@ -66,7 +76,3 @@ s1 <- summary_choice_corrected %>%
   ) +
   annotation_custom(grob = muh_grob, xmin = 0, xmax = 1, ymin = -1.08, ymax = -0.88)
 
-# Save the plot
-pdf(file.path(FigPaperDir, 'Day2_overall_ChoiceSatedOdor.pdf'), width = 4, height = 4)
-print(s1)
-dev.off()
