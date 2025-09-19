@@ -1,3 +1,43 @@
+# Project: NODEAP Core
+
+This repository contains all code, behavioral data, MRI derivatives, and figures for the NODEAP project.  
+Below is the folder structure with brief descriptions.
+
+
+```
+project-nodeap-core/
+├─ atlas_masks/                # Atlas files and ROI masks for fMRI analysis
+│  ├─ aal116/                  # AAL116 atlas in MNI space
+│  └─ masks/                   # Custom ROI masks (binary/probabilistic)
+│
+├─ beh_data_found/             # Raw behavioral data collected from experiments
+│
+├─ beh_data_processed/         # Cleaned & processed behavioral datasets
+│
+├─ beh_modeling/               # Model fitting scripts and outputs 
+│
+├─ data_mri_processed/         # Processed MRI derivatives
+│
+├─ Figs_Adobe/                 # Intermediate figures for manual editing
+│
+├─ Figs_paper/                 # Figures saved directly by R/Python code (publication-ready)
+│
+├─ scripts/                    # All analysis and preprocessing code
+│  ├─ analysis/                # Data analysis code
+│  │  ├─ beh_analysis/         # Behavioral data statistical analysis
+│  │  ├─ FuncConn_AAL_spheres/ # Functional connectivity analyses using AAL ROI spheres
+│  │  ├─ mri_analysis/         # MRI analysis scripts (GLMs, searchlight, group stats)
+│  │  └─ ReplicatingTMSProcessing/ # Scripts replicating TMS processing pipeline
+│  │
+│  ├─ data_prep/               # Behavioral data cleaning/merging scripts
+│  ├─ utils/                   # Helper functions, config scripts
+│  └─ tms_visualization/       # Visualization scripts for TMS targets/networks
+│
+└─ README.md                   # Project overview (this file)
+```
+
+
+
 ## Summary of Behavioral Data Issues
  
 ### 📌 Subject: `NODEAP_17`
