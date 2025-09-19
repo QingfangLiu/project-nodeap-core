@@ -7,7 +7,7 @@
   - Only completed **two runs of conditioning** in **Session 2** (cTBS–sham)
   - Behavioral data from Session 2 is **partial** and saved separately
   - For analysis, **Sessions 1 and 3** are included
-  - Not used for **conditioning comparisons**
+  - Not used for analyzing behavioral data during conditioning task.
   - Could slightly enhance power for **sham–cTBS vs sham–sham** comparison
 - **Neural Data Handling**:
   - **Neural data from Session 2 is included**, *except when correlating MRI with behavior*
