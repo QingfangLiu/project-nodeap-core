@@ -1,1 +1,11 @@
-data_backup/
+# Ignore large posterior samples
+beh_modeling/results/posterior_learning_model.rds
+
+# R session files
+.Rhistory
+.RData
+
+.DS_Store
+
+
+

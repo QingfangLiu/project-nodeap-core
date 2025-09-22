@@ -16,7 +16,15 @@ library(ggh4x) # tweaking ggplots (e.g. facets)
 library(grid)  # manually adding panel/label names with shade
 
 project_folder <- "/Users/liuq13/project-nodeap-core"
+
+# where to save the figures
 FigPaperDir = file.path(project_folder,'figs_paper')
+
+# where to save processed behavioral data
+processed_dir <- file.path(project_folder, "beh_data_processed")
+
+# where the learning modeling work is saved
+beh_model_dir <- file.path(project_folder, "beh_modeling")
 
 pd <- position_dodge(0.6) # set dodge width
 #pd <- position_jitterdodge(jitter.width = 0.1, dodge.width = 0.6, jitter.height = 0)

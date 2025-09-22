@@ -7,8 +7,6 @@ rm(list = ls())
 project_folder <- "/Users/liuq13/project-nodeap-core"
 source(file.path(project_folder, "scripts", "utils", "Setup.R"))  # paths, libs, theme
 
-processed_dir <- file.path(project_folder, "beh_data_processed")
-
 # ------------------------------------------------------------------
 # Load odor ratings
 # ------------------------------------------------------------------

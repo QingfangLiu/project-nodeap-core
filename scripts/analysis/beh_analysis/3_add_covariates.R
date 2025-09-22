@@ -3,14 +3,18 @@
 # this code adds covariates of value diff and Didx to the choice wise data
 
 rm(list = ls())
-source('Setup.R')
+# load_setup.R
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
 #######################
 
-load(file = file.path(pro_dat_dir,'choice_dat_ss_w_base.RData'))
-load(file = file.path(pro_dat_dir,'choice_cue_mapping_post.RData'))
-load(file = file.path(pro_dat_dir,'conditioning_cue_mapping.RData'))
-load(file = '../ProcessedData/SelectSate_dat.RData')
+load(file = file.path(processed_dir,'choice_dat_ss_w_base.RData'))
+
+load(file = file.path(processed_dir,'choice_cue_mapping_post.RData'))
+load(file = file.path(processed_dir,'conditioning_cue_mapping.RData'))
+
+load(file = file.path(processed_dir,'SelectSate_dat.RData'))
 
 df_w = read.csv(file = 
                   '/Users/liuq13/Library/CloudStorage/Box-Box/NODEAP_data_analysis/BehModeling_output/csv/df_w_per_sub_sess_cuepair.csv')
@@ -74,6 +78,6 @@ use_choice_dat_ss <- use_choice_dat_ss %>%
   )
 
 save(use_choice_dat_ss,
-     file = file.path(pro_dat_dir,'choice_dat_ss_w_base_values.RData'))
+     file = file.path(processed_dir,'choice_dat_ss_w_base_values.RData'))
 
 

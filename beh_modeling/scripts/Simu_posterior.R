@@ -4,16 +4,18 @@
 # alpha is for each sess and each subj
 
 rm(list=ls()) 
-library(openxlsx)
+
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
+
 library(rjags)
 library(R2jags)
-library(plyr)
-library(tidyverse)
-source('../../Scripts_R_beh/Setup.R')
 
-# load data to use
-load(file = '../../ProcessedData/Conditioning.RData') # this contains some NA trials
-use_dat = conditioning_dat  
+# load conditioning data to use
+load(file = file.path(processed_dir,'Conditioning.RData'))
+
+# this contains some NA trials
+use_dat = conditioning_dat   
 
 # prepare model inputs as vectors
 sub = use_dat$SubID

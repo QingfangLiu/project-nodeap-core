@@ -21,27 +21,16 @@
 #   RData files in the ProcessedData folder, ready to be used to map
 #   model-estimated w values back to cue IDs.
 #
-# Usage:
-#   Edit the `project_folder` path below to match your local project location,
-#   then run this script in R. The output files will be written to
-#   <project_folder>/ProcessedData/.
+
 # ========================================================================
 
 rm(list = ls())
-
 project_folder <- "/Users/liuq13/project-nodeap-core" 
-# Minimal path helper
-p <- function(...) file.path(project_folder, ...)
-
 source(file.path(project_folder, "scripts", "utils", "Setup.R"))
-
-# ---- Paths ----
-processed_dir <- p("ProcessedData")        # keep a single, consistent folder
-if (!dir.exists(processed_dir)) dir.create(processed_dir, recursive = TRUE)
 
 # ---- Conditioning: build cue mapping ----
 # expects object `conditioning_dat` inside the .RData
-load(p("ProcessedData", "Conditioning.RData"))
+load(file = file.path(processed_dir,'Conditioning.RData'))
 
 conditioning_cue_mapping = conditioning_dat %>%
   subset(OdorLR==1 & Run==1) %>%

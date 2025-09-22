@@ -43,16 +43,11 @@
 #    save trial-level with baseline and the baseline table.
 ############################################################
 
-
-
 rm(list = ls())
 
 # load_setup.R
 project_folder <- "/Users/liuq13/project-nodeap-core"
 source(file.path(project_folder, "scripts", "utils", "Setup.R"))
-
-# dir of processed beh data
-processed_dir <- file.path(project_folder,"beh_data_processed")
 
 # Load full choice dataset
 load(file = file.path(processed_dir, 'choice_dat.RData'))
@@ -216,5 +211,93 @@ dev.off()
 pdf(file.path(FigPaperDir,'choice_sated_day2.pdf'),8,4)
 print(p_day2)
 dev.off()
+
+
+########################################################
+
+# Purpose
+# Assess the overall devaluation effect on choices using
+# subject-level change scores and visualize the effect by
+# TMS target (aOFC vs pOFC).
+#
+# Inputs
+# - Setup.R (sourced): defines paths (e.g., `project_folder`,
+#   `processed_dir`) and shared objects used in plotting
+#   (e.g., `common`, `use.col.ap.ofc`, `pd`) as well as
+#   required libraries.
+# - file.path(processed_dir, "Summary_Choice_corrected_dat.RData"):
+#   loads an object named `summary_choice_corrected`, a data
+#   frame with at least:
+#     * SubID : subject identifier
+#     * StimLoc : "aOFC" or "pOFC" (TMS target)
+#     * ChoiceChangeAB : numeric, (post-meal − pre-meal) choice
+#       for sated odor, aggregated per subject
+#
+# What the script does
+# 1) Loads precomputed subject-level change scores.
+# 2) Runs one-sided Wilcoxon signed-rank tests testing whether
+#    median ChoiceChangeAB < 0 within:
+#       - pOFC group
+#       - aOFC group
+#    and also runs a (two-sided) test on all subjects combined.
+# 3) Plots the distribution of ChoiceChangeAB by StimLoc 
+#
+# Outputs
+# - Figure: A ggplot object rendered to the active device showing
+#   ChoiceChangeAB (post − pre) by StimLoc (aOFC, pOFC).
+#   (this figure is not included in the final manuscript)
+#
+########################################################
+
+
+# -----------------------------------------------------
+# Statistical testing: devaluation effect within each TMS target
+# -----------------------------------------------------
+
+# pOFC group only
+value_pOFC <- subset(summary_choice_corrected, StimLoc == 'pOFC')$ChoiceChangeAB
+wilcox.test(value_pOFC, alternative = 't')  # Significant: p = 0.0044
+
+# aOFC group only
+value_aOFC <- subset(summary_choice_corrected, StimLoc == 'aOFC')$ChoiceChangeAB
+wilcox.test(value_aOFC, alternative = 't')  # Significant: p = 0.044
+
+# both groups
+value <- summary_choice_corrected$ChoiceChangeAB
+wilcox.test(value, alternative = 't')  # Significant: p = 0.0005307
+
+# -----------------------------------------------------
+# Plot: Day 2 effect (Post - Pre) across aOFC and pOFC
+# -----------------------------------------------------
+
+# Create custom background highlight for each x-axis group
+muh_grob <- rectGrob(
+  x = 1:2, y = 0,
+  gp = gpar(color = 'black', fill = use.col.ap.ofc, alpha = 1)
+)
+
+# Violin + boxplot of change scores by stimulation site
+summary_choice_corrected %>%
+  ggplot(aes(x = StimLoc, y = ChoiceChangeAB)) +
+  geom_violin() +
+  geom_boxplot(width = 0.2, outlier.alpha = 0, alpha = 0.4) +
+  geom_jitter(aes(group = SubID), position = pd, size = 2, alpha = 0.8) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  annotate("text", x = 1, y = 0.45, label = "*", size = 4, color = "black") +     # aOFC sig
+  annotate("text", x = 2, y = 0.75, label = "***", size = 4, color = "black") +   # pOFC sig
+  labs(
+    x = NULL,
+    y = "Choice of sated odor\n(post - pre-meal)",
+    title = NULL
+  ) +
+  common +
+  coord_cartesian(clip = 'off') +
+  theme(
+    axis.text.x = element_text(margin = margin(t = 10), color = 'white'),
+    legend.position = 'inside',
+    legend.position.inside = c(0.3, 0.96),
+    legend.key.size = unit(0.28, 'cm')
+  ) +
+  annotation_custom(grob = muh_grob, xmin = 0, xmax = 1, ymin = -1.08, ymax = -0.88)
 
 
