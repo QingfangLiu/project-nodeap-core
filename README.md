@@ -1,4 +1,7 @@
-# Project: NODEAP Core
+# Project: NODEAP Core - Distinct contributions of anterior and posterior OFC to outcome-guided behavior
+
+## **Summary**  
+This dataset contains defaced anatomical T1-weighted MRI and raw multi-echo resting-state fMRI from a study testing differential roles of the anterior (aOFC) and posterior (pOFC) lateral orbitofrontal cortex in outcome-guided (goal-directed) behavior. Participants completed odor-reward learning and outcome devaluation across multiple sessions. Network-targeted TMS was applied to aOFC or pOFC in separate sessions to probe effects on learning vs. value inference.
 
 This repository contains all code, behavioral data, MRI derivatives, and figures for the NODEAP project.  
 Below is the folder structure with brief descriptions.
