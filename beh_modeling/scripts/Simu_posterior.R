@@ -14,7 +14,6 @@ library(R2jags)
 # load conditioning data to use
 load(file = file.path(processed_dir,'Conditioning.RData'))
 
-# this contains some NA trials
 use_dat = conditioning_dat   
 
 # prepare model inputs as vectors
@@ -44,9 +43,8 @@ for(j in 1:nsubs){
 ## simulate the model
 
 # load the MAP estimates of alpha
-# from the session-specific learning model
-alpha = read.csv(file = 'alpha_per_sub_sess.csv',row.names = NULL)
-alpha = alpha[,c(2,3,4)]
+
+alpha = readRDS(file.path(beh_model_dir, "results", "alpha_mean_array.rds"))
 
 nsim = 1e4
 all_acc = array(NA,c(nsim,nsubs,nsess,nruns))
@@ -64,7 +62,7 @@ for(j in 1:nsubs){
       # update w of current cue pair or pass w of absent cue to next trial
       for(p in 1:ncuepair){
         w[j,c,i+1,p] <- w[j,c,i,p] + ifelse(CuePair[j,c,i]==p,
-                                            alpha[j,c] * (1 - w[j,c,i,p]),0)
+                                            alpha[j,c,p] * (1 - w[j,c,i,p]),0)
       }   
     } # end of trials loop
   } # end of sess loop
@@ -89,20 +87,11 @@ all_acc[kk,,,] = acc
 
 use_acc = apply(all_acc,c(2,3,4),mean)
 
-pdf('Simu.pdf',8,7)
-par(mfrow=c(2,2))
-for(j in 1:nsubs){
-matplot(t(use_acc[j,,]),type = 'l',ylab = 'Avg acc',
-        lty = 1,lwd = 2,ylim = c(0.5,1),
-        main = unique(use_dat$SubID)[j])
-}
-dev.off()
-
 save.image(file = 'Simu_posterior.RData')
 
 # load the data back & do some plotting
 
-load(file = 'Simu_posterior.RData')
+load(file = file.path(beh_model_dir,'results','Simu_posterior.RData'))
 
 # convert array to df
 all_acc = all_acc[1:100,,,]
@@ -127,19 +116,7 @@ df_summary_by_sess <- df_acc %>%
     upper = quantile(acc, 0.975)
     ) 
     
-# Now use the summarized data for plotting
-ggplot(df_summary_by_sess, aes(x = run, y = mean_acc, fill = as.factor(sess),
-                       group = sess, color = as.factor(sess))) +
-  #geom_line(size = 1) +  # Add line for the mean accuracy
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) + 
-  scale_color_manual(values = use.col.sess) +
-  scale_fill_manual(values = use.col.sess) +
-  labs(x = "Runs", y = "Simulated accuracy") +
-  common
-  
 
-# to have TMS info
-load(file = 'Simu_posterior.RData')
 # convert array to df
 use.iter = 10
 all_acc = all_acc[1:use.iter,,,]

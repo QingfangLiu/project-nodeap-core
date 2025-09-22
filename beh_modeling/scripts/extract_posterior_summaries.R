@@ -12,6 +12,9 @@
 # - beh_model_dir/results/posterior_learning_model.rds  (R2jags “bugs” object)
 #   • sims.list$alpha  [draw, sub, sess, cuepair]
 #   • sims.list$w      [draw, sub, sess, trial_index, cuepair]
+#   NOTE: This file is large and not tracked in the GitHub repo.
+#   Anyone who wants to reproduce the results must first run
+#   `run_learning_model_jags.R` to generate it locally.
 # - processed_dir/Conditioning.RData (for SubID/Sess indexing)
 #
 # Outputs
