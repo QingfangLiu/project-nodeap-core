@@ -87,7 +87,6 @@ all_acc[kk,,,] = acc
 
 use_acc = apply(all_acc,c(2,3,4),mean)
 
-save.image(file = 'Simu_posterior.RData')
 
 # load the data back & do some plotting
 
