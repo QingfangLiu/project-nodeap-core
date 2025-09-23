@@ -18,7 +18,6 @@
 # - processed_dir/Conditioning.RData (for SubID/Sess indexing)
 #
 # Outputs
-# - beh_model_dir/results/alpha_mean_array.rds                  (posterior mean α, 3D array)
 # - beh_model_dir/results/df_w_per_sub_sess_cuepair.csv         (posterior mean w at i=121, long)
 # - beh_model_dir/results/w_end_learning_by_sub_sess.pdf        (box+jitter by session, faceted by subject)
 #
@@ -45,15 +44,7 @@ w_csv_path     <- file.path(beh_model_dir, "results", "df_w_per_sub_sess_cuepair
 samples <- readRDS(file = post_rds_path)
 
 # Expected components in R2jags output
-alpha <- samples$BUGSoutput$sims.list$alpha  # [draw, sub, sess, cuepair]
 w     <- samples$BUGSoutput$sims.list$w      # [draw, sub, sess, trial_index, cuepair]
-
-# 2) Summarize alpha (posterior mean) and save
-
-# alpha: mean over MCMC draws → [sub, sess, cuepair]
-
-alpha_mean <- apply(alpha, c(2, 3, 4), mean)
-saveRDS(alpha_mean, alpha_rds_path)
 
 # 3) Summarize end-of-learning w (posterior mean at i = 121) and save
 

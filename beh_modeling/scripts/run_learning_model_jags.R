@@ -22,6 +22,7 @@
 #
 # Outputs
 # - results/posterior_learning_model.rds  (R2jags 'bugs' object)
+# - results/posterior_design_arrays.rds         (CuePair, run_idx, meta_ss, etc.)
 #
 # Notes
 # - w is tracked across trials; to limit object size, MCMC thinning
@@ -63,6 +64,27 @@ for(j in 1:nsubs){
       TMS[j,c,] = cond[sub==j & sess==c] # vals: 1,2
   }
 }
+
+# --- NEW: build per-session run index and a small metadata table ---
+ntrials_per_run <- 24L
+nruns           <- 5L
+stopifnot(ntrials == ntrials_per_run * nruns)
+
+# run_idx[sub, sess, trial] = 1..5 for trials 1..120 in correct order
+run_idx <- array(NA_integer_, c(nsubs, nsess, ntrials))
+run_templ <- rep(seq_len(nruns), each = ntrials_per_run)
+for (j in seq_len(nsubs)) for (c in seq_len(nsess)) run_idx[j, c, ] <- run_templ
+
+# (optional) per-(SubID,Sess) metadata you’ll want for plotting
+meta_ss <- unique(
+  data.frame(
+    SubID     = use_dat$SubID,
+    Sess      = as.integer(use_dat$Sess),
+    Cond_day1 = use_dat$Cond_day1,
+    StimLoc   = use_dat$StimLoc,
+    stringsAsFactors = FALSE
+  )
+)
 
 # 3) Initialize latent state w (trial 1 prior) and build data list
 
@@ -115,5 +137,19 @@ print(end_time - start_time)
 out_filepath = file.path(beh_model_dir,'results','posterior_learning_model.rds')
 saveRDS(samples, file = out_filepath)
 
+# --- save design sidecar for plotting w without guessing structure ---
+design_path <- file.path(beh_model_dir, "results", "posterior_design_arrays.rds")
+saveRDS(
+  list(
+    CuePair          = CuePair,               # [sub × sess × trial]
+    run_idx          = run_idx,               # [sub × sess × trial] (1..nruns)
+    SubID_levels     = unique(use_dat$SubID),
+    ntrials_per_run  = ntrials_per_run,
+    nruns            = nruns,
+    meta_ss          = meta_ss               # SubID, Sess, Cond_day1, StimLoc
+  ),
+  file = design_path
+)
+cat("Saved design arrays to:\n", design_path, "\n")
 
 
