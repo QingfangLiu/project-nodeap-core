@@ -2,8 +2,7 @@
 ########################################################
 # Purpose
 # - Compute posterior means for:
-#   (1) Learning rates α[j, c, p]  → saved as a 3D array (.rds)
-#   (2) End-of-learning latent values w[j, c, p] at i = ntrials+1
+#   End-of-learning latent values w[j, c, p] at i = ntrials+1
 #       → saved as a long CSV for downstream analyses/plots
 # - Produce a PDF figure summarizing w by session (faceted by subject).
 #
@@ -23,7 +22,6 @@
 #
 # Notes
 # - “i = 121” corresponds to ntrials = 120 (model stores w at 1..ntrials+1).
-# - This script uses posterior MEANS (not MAP).
 ########################################################
 
 
@@ -37,7 +35,6 @@ post_rds_path <- file.path(beh_model_dir, "results", post_rds_name)
 fig_path <- file.path(beh_model_dir, "results", "w_end_learning_by_sub_sess.pdf")
 
 # Output files
-alpha_rds_path <- file.path(beh_model_dir, "results", "alpha_mean_array.rds")
 w_csv_path     <- file.path(beh_model_dir, "results", "df_w_per_sub_sess_cuepair.csv")
 
 # 1) Load posterior samples
@@ -76,8 +73,7 @@ write.csv(df_w, row.names = FALSE, file = w_csv_path)
 
 # 4) Quick visualization 
 
-pdf(fig_path, width = 8, height = 6)  # open PDF device
-
+pdf(fig_path, width = 8, height = 8)  # open PDF device
 ggplot(df_w,aes(x=Sess,y=w,color=Sess,fill=Sess)) +
   geom_boxplot(alpha=0.4) +
   geom_jitter(alpha=0.5) +
@@ -85,5 +81,4 @@ ggplot(df_w,aes(x=Sess,y=w,color=Sess,fill=Sess)) +
   scale_color_manual(values = use.col.sess) +
   scale_fill_manual(values = use.col.sess) +
   labs(y='Learned stimulus value',x='Session')
-
 dev.off()  # close PDF device
