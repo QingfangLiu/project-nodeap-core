@@ -1,9 +1,10 @@
 
 rm(list = ls())
-source('Setup.R')
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
 # this code correlates the choice updating with TMS ratings
-load(file = file.path(pro_dat_dir,'Summary_Choice_corrected_dat.RData'))
+load(file = file.path(processed_dir,'Summary_Choice_corrected_dat.RData'))
 
 ###############################
 ### correlate the choice updating with TMS ratings

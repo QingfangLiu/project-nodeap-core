@@ -18,7 +18,7 @@ library(grid)  # manually adding panel/label names with shade
 project_folder <- "/Users/liuq13/project-nodeap-core"
 
 # where to save the figures
-FigPaperDir = file.path(project_folder,'figs_paper')
+FigPaperDir = file.path(project_folder,'Figs_generated')
 
 # where to save processed behavioral data
 processed_dir <- file.path(project_folder, "beh_data_processed")

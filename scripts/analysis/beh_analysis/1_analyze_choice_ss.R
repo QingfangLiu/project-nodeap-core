@@ -119,7 +119,7 @@ pcorr3 <- ggplot(df_pre_post_summary, aes(x = post_A, y = post_B)) +
   common +
   theme(legend.position = 'none')
 
-pdf(file.path(FigPaperDir, 'Choice_corr_paper.pdf'), width = 14, height = 4)
+pdf(file.path(FigPaperDir, 'Corr_choice_pre_post_meal.pdf'), width = 14, height = 4)
 print(ggarrange(pcorr1, pcorr2, pcorr3, ncol = 3, nrow = 1))
 dev.off()
 
