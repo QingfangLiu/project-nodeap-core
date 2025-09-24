@@ -39,7 +39,7 @@ project-nodeap-core/
 └─ README.md                   # Project overview (this file)
 ```
 
-
+For details on the hierarchical Bayesian behavioral modeling used in this project, see the dedicated [README in `beh_modeling/`](./beh_modeling/README.md).
 
 ## Summary of Behavioral Data Issues
  
