@@ -44,7 +44,6 @@ sub_lookup <- tibble(sub = seq_along(design$SubID_levels),
 
 # ---- Config ----
 cred_level <- 0.90
-avg_across_subjects <- TRUE
 lo <- (1 - cred_level)/2; hi <- 1 - lo
 
 # ---- Dimensions / guards ----
@@ -73,7 +72,7 @@ run_vals <- lapply(seq_len(n_draw), function(d) {
                  w = get_run_values(d, j, c))
     }))
   }))
-}) |> dplyr::bind_rows()
+}) |> bind_rows()
 
 # Attach SubID / StimLoc / Cond_day1, and nice factors
 run_vals <- run_vals %>%
@@ -89,16 +88,16 @@ run_vals <- run_vals %>%
 # by Cond_day1
 ci_cond <- run_vals %>%
   group_by(draw, StimLoc, Cond_day1, run) %>%
-  summarise(w = if (avg_across_subjects) mean(w) else w, .groups = "drop") %>%
+  reframe(w = mean(w)) %>%
   group_by(StimLoc, Cond_day1, run) %>%
-  summarise(w_lo = quantile(w, lo), w_hi = quantile(w, hi), .groups = "drop")
+  reframe(w_lo = quantile(w, lo), w_hi = quantile(w, hi))
 
 # by Sess
 ci_sess <- run_vals %>%
   group_by(draw, StimLoc, sess_f, run) %>%
-  summarise(w = if (avg_across_subjects) mean(w) else w, .groups = "drop") %>%
+  reframe(w = mean(w)) %>%
   group_by(StimLoc, sess_f, run) %>%
-  summarise(w_lo = quantile(w, lo), w_hi = quantile(w, hi), .groups = "drop")
+  reframe(w_lo = quantile(w, lo), w_hi = quantile(w, hi))
 
 # ---- Empirical summaries for overlay ----
 # by Cond_day1
@@ -110,15 +109,13 @@ emp_cond <- conditioning_dat %>%
     Run       = as.integer(Run)
   ) %>%
   group_by(SubID, StimLoc, Cond_day1, Run) %>%
-  summarise(choice = mean(OdorChosen), .groups = "drop") %>%
+  reframe(choice = mean(OdorChosen)) %>%
   group_by(StimLoc, Cond_day1, Run) %>%
-  summarise(
+  reframe(
     mean = mean(choice),
     se   = sd(choice)/sqrt(n()),
     lo   = mean - 1.96*se,
-    hi   = mean + 1.96*se,
-    .groups = "drop"
-  )
+    hi   = mean + 1.96*se)
 
 # by Sess
 emp_sess <- conditioning_dat %>%
@@ -129,15 +126,13 @@ emp_sess <- conditioning_dat %>%
     Run     = as.integer(Run)
   ) %>%
   group_by(SubID, StimLoc, Sess, Run) %>%
-  summarise(choice = mean(OdorChosen), .groups = "drop") %>%
+  reframe(choice = mean(OdorChosen)) %>%
   group_by(StimLoc, Sess, Run) %>%
-  summarise(
+  reframe(
     mean = mean(choice),
     se   = sd(choice)/sqrt(n()),
     lo   = mean - 1.96*se,
-    hi   = mean + 1.96*se,
-    .groups = "drop"
-  )
+    hi   = mean + 1.96*se)
 
 strip <- strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
                       text_x = elem_list_text(color = 'white',
@@ -146,10 +141,10 @@ strip <- strip_themed(background_x = elem_list_rect(fill = use.col.ap.ofc),
 
 # ---- p1: color by Cond_day1, facet by StimLoc ----
 p1 <- ggplot(ci_cond) +
-  ggh4x::facet_wrap2(~ StimLoc, nrow = 1, strip = strip, scales = 'free_y') +
+  facet_wrap2(~ StimLoc, nrow = 1, strip = strip, scales = 'free_y') +
   geom_ribbon(aes(x = run, ymin = w_lo, ymax = w_hi, fill = Cond_day1,
                   group = interaction(StimLoc, Cond_day1)),
-              alpha = 0.22, linewidth = 0, show.legend = FALSE) +
+              alpha = 0.5, linewidth = 0, show.legend = FALSE) +
   scale_fill_manual(values = use.col.conds.day1) +
   scale_color_manual(values = use.col.conds.day1) +
   geom_errorbar(data = emp_cond, # empirical overlay
@@ -161,19 +156,17 @@ p1 <- ggplot(ci_cond) +
   scale_x_continuous(breaks = runs_vec) +
   coord_cartesian(ylim = c(0.5, 1)) +
   labs(x = "Runs", y = "P (Choosing rewarding stim)", color = "Day1 TMS") +
-  theme_classic(base_size = 14) +
-  common + theme(legend.position = c(0.85, 0.3))
+  common + theme(legend.position.inside = c(0.85, 0.3))
 
 # ---- p2: color by Sess, facet by StimLoc ----
 p2 <- ggplot(ci_sess) +
-  ggh4x::facet_wrap2(~ StimLoc, nrow = 1, strip = strip, scales = 'free_y') +
+  facet_wrap2(~ StimLoc, nrow = 1, strip = strip, scales = 'free_y') +
   geom_ribbon(aes(x = run, ymin = w_lo, ymax = w_hi, fill = sess_f,
                   group = interaction(StimLoc, sess_f)),
-              alpha = 0.22, linewidth = 0, show.legend = FALSE) +
+              alpha = 0.5, linewidth = 0, show.legend = FALSE) +
   scale_fill_manual(values = use.col.sess) +
   scale_color_manual(values = use.col.sess) +
-  # empirical overlay
-  geom_errorbar(data = emp_sess,
+  geom_errorbar(data = emp_sess, # empirical overlay
                 aes(x = Run, ymin = lo, ymax = hi, color = Sess),
                 width = 0.3, linewidth = 1, show.legend = FALSE) +
   stat_summary(data = emp_sess,
@@ -182,9 +175,8 @@ p2 <- ggplot(ci_sess) +
   scale_x_continuous(breaks = runs_vec) +
   coord_cartesian(ylim = c(0.5, 1)) +
   labs(x = "Runs", y = "P (Choosing rewarding stim)", color = "Session") +
-  theme_classic(base_size = 14) +
-  common + theme(legend.position = c(0.85, 0.3))
+  common + theme(legend.position.inside = c(0.85, 0.3))
 
-pdf(file.path(FigPaperDir,'Conditioning_acc_obs_sim.pdf'),8,8)
+pdf(file.path(FigPaperDir,'Conditioning_acc_obs_sim.pdf'),9,8)
 ggarrange(p1,p2,nrow = 2)
 dev.off()
