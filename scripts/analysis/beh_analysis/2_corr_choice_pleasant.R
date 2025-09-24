@@ -1,6 +1,7 @@
 
 rm(list = ls())
-source('Setup.R')
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
 #######################################################
 
@@ -12,9 +13,9 @@ source('Setup.R')
 # from 48 subjects but one has only two sessions
 # look at pre-meal and post-meal separately
 
-load(file = '../ProcessedData/choice_dat.RData')
-load(file = '../ProcessedData/Odor_ratings_dat.RData')
-
+load(file.path(processed_dir,'choice_dat.RData'))
+load(file.path(processed_dir,'Odor_ratings_dat.RData'))
+     
 pleasant_diff_pre <- Odor_ratings_dat %>%
   subset(PrePost=='Pre-meal') %>%
   group_by(SubID, Sess) %>%
@@ -30,17 +31,24 @@ pre_meal_choice = choice_dat %>%
   mutate(Plea_Diff = pleasant_diff_pre$Plea_Diff) 
   
 corr_pre = pre_meal_choice %>%
-  ggplot(aes(x=Plea_Diff,y=avg_choice,color=Cond,fill=Cond)) +
-  geom_point() +
-  geom_smooth(method = rlm, se = TRUE, alpha = 0.2) +
-  stat_cor(method = 'pearson') +
-  labs(y='Selecting sated odor',
-       x='Odor pleasant (sated - non-sated)',
-       title = 'Pre-meal') + 
+  ggplot(aes(x=Plea_Diff,y=avg_choice)) +
+  geom_point(aes(colour = Cond, fill=Cond),size=2) +
+  geom_smooth(method = rlm, se = TRUE, alpha = 0.2, color = 'black') +
+  stat_cor(method = 'pearson', size = 5) +
+  labs(y='P(choose sated)',
+       x='Odor pleasantness (sated − non-sated), pre-meal',
+       title = NULL) + 
   scale_color_manual(values = use.col.conds) + 
   scale_fill_manual(values = use.col.conds) +
-  common +
-  theme(legend.position = 'none')
+  scale_y_continuous(
+    breaks = seq(0, 1, by = 0.25),  
+    limits = c(0, 1)  # ensure the axis runs from 0 to 1
+  ) +
+  scale_x_continuous(
+    breaks = seq(-15, 10, by = 5),  
+    limits = c(-15, 15)  
+  ) +
+  common + theme(legend.position = 'none')
 
 
 ## post-meal
@@ -59,17 +67,55 @@ post_meal_choice = choice_dat %>%
   mutate(Plea_Diff = pleasant_diff_post$Plea_Diff)
 
 corr_post = post_meal_choice %>%
-  ggplot(aes(x=Plea_Diff,y=avg_choice,color=Cond,fill=Cond)) +
-  geom_point() +
-  geom_smooth(method = rlm, se = TRUE, alpha = 0.2) +
-  stat_cor(method = 'pearson') +
-  labs(y='Selecting sated odor',
-       x='Odor pleasant (sated - non-sated)',
-       title = 'Post-meal') + 
+  ggplot(aes(x=Plea_Diff,y=avg_choice)) +
+  geom_point(aes(colour = Cond, fill=Cond),size=2) +
+  geom_smooth(method = rlm, se = TRUE, alpha = 0.2, color = 'black') +
+  stat_cor(method = 'pearson', size = 5) +
+  labs(y='P(choose sated)',
+       x='Odor pleasantness (sated − non-sated), post-meal',
+       title = NULL) + 
   scale_color_manual(values = use.col.conds) + 
   scale_fill_manual(values = use.col.conds) +
+  scale_y_continuous(
+    breaks = seq(0, 1, by = 0.25),  
+    limits = c(0, 1)  # ensure the axis runs from 0 to 1
+  ) + 
+  scale_x_continuous(
+    breaks = seq(-15, 10, by = 5),  
+    limits = c(-15, 15)  
+  ) +
   common +
   theme(legend.position = 'none')
+
+###############################
+### correlate the choice updating with selective satiation idx ###
+###############################
+
+load(file.path(processed_dir,'Summary_Choice_corrected_dat.RData'))
+load(file.path(processed_dir,'SelectSate_dat.RData'))
+
+# (having checked rows are aligned)
+df_comb = cbind(summary_choice_corrected,
+                SelectSate_dat[,c('Devalued','Didx')])
+
+p_corr=ggplot(df_comb,aes(x=Didx,y=ChoiceChangeAB)) +
+  geom_point(aes(color=Cond,fill=Cond),size=2) +
+  geom_smooth(method = rlm, se = TRUE, color = 'black') + 
+  scale_color_manual(values = use.col.conds) +
+  scale_fill_manual(values = use.col.conds) +
+  stat_cor(method = 'pearson', size = 5) +
+  common +
+  labs(title = NULL,
+       x = 'Selective satiation index',
+       y = 'ΔP(choose sated) (post − pre)') +
+  theme(legend.position = 'none')
+
+use_dat = df_comb %>%
+  subset(StimLoc=='pOFC') %>%
+  subset(Cond %in% c('sham-sham','sham-cTBS'))
+model0 <- lmer(ChoiceChangeAB ~ Didx + (1|SubID), data = df_comb)
+model1 <- lmer(ChoiceChangeAB ~ Didx + Cond + (1|SubID), data = df_comb)
+anova(model0,model1)
 
 
 pdf(file.path(FigPaperDir,'Corr_choice_w_odor_ratings_pre_meal.pdf'),6,5)
@@ -80,65 +126,8 @@ pdf(file.path(FigPaperDir,'Corr_choice_w_odor_ratings_post_meal.pdf'),6,5)
 print(ggMarginal(corr_post,type = 'density',groupFill = T))
 dev.off()
 
-
-###############################
-### correlate the choice updating with selective satiation idx ###
-###############################
-
-load(file = file.path(pro_dat_dir,'Summary_Choice_corrected_dat.RData'))
-load(file = file.path(pro_dat_dir,'SelectSate_dat.RData'))
-
-# (having checked rows are aligned)
-df_comb = cbind(summary_choice_corrected,
-                SelectSate_dat[,c('Devalued','Didx')])
-
-corr1=ggplot(df_comb,aes(x=Didx,y=ChoiceChangeAB)) +
-  geom_point(aes(color=Cond,fill=Cond)) +
-  geom_smooth(method = rlm, se = TRUE, 
-              linetype = 2) + 
-  scale_color_manual(values = use.col.conds) +
-  scale_fill_manual(values = use.col.conds) +
-  stat_cor(method = 'pearson') +
-  common +
-  labs(title = NULL,
-       x = 'Selective satiation',
-       y = 'Choice of sated odor (post - pre)')
-
-# pOFC only
-# focus on Day 2 TMS effect
-corr2=df_comb %>%
-  subset(StimLoc=='pOFC') %>%
-  subset(Cond %in% c('sham-sham','sham-cTBS')) %>%
-  ggplot(aes(x=Didx,y=ChoiceChangeAB)) +
-  geom_point(aes(color=Cond,fill=Cond)) +
-  scale_color_manual(values = use.col.conds) +
-  scale_fill_manual(values = use.col.conds) +
-  #facet_wrap(~StimLoc) +
-  geom_smooth(method = rlm, se = T, color = 'black',
-              alpha = 0.2, linetype = 3) + common +
-  stat_cor(method = 'pearson') +
-  labs(title = NULL,
-       x = 'Selective satiation',
-       y = 'Choice of sated odor \n (post - pre-meal)') +
-  theme(legend.position = 'topright')
-
-pdf(file.path(FigDir,'Corr_SelectSate_choice.pdf'),5,5)
-print(corr1)
+pdf(file.path(FigPaperDir,'Corr_SelectSate_choice_by_Cond.pdf'),6,5)
+print(ggMarginal(p_corr,type = 'density',groupFill = T))
 dev.off()
-
-pdf(file.path(FigPaperDir,'Corr_SelectSate_choice_by_Cond.pdf'),5,4)
-ggMarginal(corr2,type = 'density',groupFill = T)
-dev.off()
-
-use_dat = df_comb %>%
-  subset(StimLoc=='pOFC') %>%
-  subset(Cond %in% c('sham-sham','sham-cTBS'))
-model0 <- lmer(ChoiceChangeAB ~ Didx + (1|SubID), data = df_comb)
-model1 <- lmer(ChoiceChangeAB ~ Didx + Cond + (1|SubID), data = df_comb)
-anova(model0,model1)
-
-
-
-
 
 

@@ -83,16 +83,13 @@ df_pre_post_summary <- data.frame(
 )
 
 # Step 4: Correlation plots
-lab1 <- 'pre-meal (set A)'
-lab2 <- 'post-meal (set A)'
-lab3 <- 'post-meal (set B)'
-
 pcorr1 <- ggplot(df_pre_post_summary, aes(x = pre_A, y = post_A)) +
   geom_point(aes(color = conds), size = 2) +
   scale_color_manual(values = use.col.conds) +
   geom_smooth(method = "lm", se = TRUE, color = 'black') +
   stat_cor(method = 'pearson', size = 5) +
-  labs(x = lab1, y = lab2, title = NULL) +
+  labs(x = 'P(choose sated), pre-meal (set A)', 
+       y = 'P(choose sated), post-meal (set A)', title = NULL) +
   common +
   theme(
     legend.position = 'none',
@@ -107,7 +104,8 @@ pcorr2 <- ggplot(df_pre_post_summary, aes(x = pre_A, y = post_B)) +
   scale_color_manual(values = use.col.conds) +
   geom_smooth(method = "lm", se = TRUE, color = 'black') +
   stat_cor(method = 'pearson', size = 5) +
-  labs(x = lab1, y = lab3, title = NULL) +
+  labs(x = 'P(choose sated), pre-meal (set A)', 
+       y = 'P(choose sated), post-meal (set B)', title = NULL) +
   common +
   theme(legend.position = 'none')
 
@@ -116,12 +114,13 @@ pcorr3 <- ggplot(df_pre_post_summary, aes(x = post_A, y = post_B)) +
   scale_color_manual(values = use.col.conds) +
   geom_smooth(method = "lm", se = TRUE, color = 'black') +
   stat_cor(method = 'pearson', size = 5) +
-  labs(x = lab2, y = lab3, title = NULL) +
+  labs(x = 'P(choose sated), post-meal (set A)', 
+       y = 'P(choose sated), post-meal (set B)', title = NULL) +
   common +
   theme(legend.position = 'none')
 
 pdf(file.path(FigPaperDir, 'Choice_corr_paper.pdf'), width = 14, height = 4)
-ggarrange(pcorr1, pcorr2, pcorr3, ncol = 3, nrow = 1)
+print(ggarrange(pcorr1, pcorr2, pcorr3, ncol = 3, nrow = 1))
 dev.off()
 
 # Step 5: Compute average choice change (from pre-meal to post-meal)
