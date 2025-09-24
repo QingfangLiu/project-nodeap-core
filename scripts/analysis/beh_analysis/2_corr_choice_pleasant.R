@@ -1,21 +1,41 @@
 
+############################################################
+# Correlate Choice Behavior with Odor Ratings & Satiation
+#
+# Goal
+#   1) Test whether choices (P[choose sated]) align with odor
+#      pleasantness differences, separately for pre- and post-meal.
+#   2) Relate choice updating ΔP(choose sated) to the selective
+#      satiation index (Didx).
+#
+# Inputs (from Setup.R & processed_dir)
+#   - choice_dat.RData                 -> choice_dat
+#   - Odor_ratings_dat.RData           -> Odor_ratings_dat
+#   - Summary_Choice_corrected_dat.RData -> summary_choice_corrected
+#   - SelectSate_dat.RData             -> SelectSate_dat
+#
+# Key outputs (saved to FigPaperDir)
+#   - Corr_choice_w_odor_ratings_pre_meal.pdf
+#   - Corr_choice_w_odor_ratings_post_meal.pdf
+#   - Corr_SelectSate_choice_by_Cond.pdf
+#
+############################################################
+
 rm(list = ls())
 project_folder <- "/Users/liuq13/project-nodeap-core"
 source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
-#######################################################
+# ----------------------------- #
+# Load data
+# ----------------------------- #
+load(file.path(processed_dir, "choice_dat.RData"))
+load(file.path(processed_dir, "Odor_ratings_dat.RData"))
 
-# check choices with odor-ratings
-# to see whether people actually made their choices 
-# based on the odor preferences
-# both before and after the meal
-
-# from 48 subjects but one has only two sessions
-# look at pre-meal and post-meal separately
-
-load(file.path(processed_dir,'choice_dat.RData'))
-load(file.path(processed_dir,'Odor_ratings_dat.RData'))
+# ----------------------------- #
+# 1) Choice ~ Odor Ratings (Pre / Post)
+# ----------------------------- #
      
+# Pre-meal
 pleasant_diff_pre <- Odor_ratings_dat %>%
   subset(PrePost=='Pre-meal') %>%
   group_by(SubID, Sess) %>%
@@ -49,7 +69,6 @@ corr_pre = pre_meal_choice %>%
     limits = c(-15, 15)  
   ) +
   common + theme(legend.position = 'none')
-
 
 ## post-meal
 pleasant_diff_post <- Odor_ratings_dat %>%
@@ -87,9 +106,9 @@ corr_post = post_meal_choice %>%
   common +
   theme(legend.position = 'none')
 
-###############################
-### correlate the choice updating with selective satiation idx ###
-###############################
+# ----------------------------- #
+# 2) ΔChoice ~ Selective Satiation Index
+# ----------------------------- #
 
 load(file.path(processed_dir,'Summary_Choice_corrected_dat.RData'))
 load(file.path(processed_dir,'SelectSate_dat.RData'))
@@ -110,13 +129,9 @@ p_corr=ggplot(df_comb,aes(x=Didx,y=ChoiceChangeAB)) +
        y = 'ΔP(choose sated) (post − pre)') +
   theme(legend.position = 'none')
 
-use_dat = df_comb %>%
-  subset(StimLoc=='pOFC') %>%
-  subset(Cond %in% c('sham-sham','sham-cTBS'))
-model0 <- lmer(ChoiceChangeAB ~ Didx + (1|SubID), data = df_comb)
-model1 <- lmer(ChoiceChangeAB ~ Didx + Cond + (1|SubID), data = df_comb)
-anova(model0,model1)
-
+# ----------------------------- #
+# Save figures
+# ----------------------------- #
 
 pdf(file.path(FigPaperDir,'Corr_choice_w_odor_ratings_pre_meal.pdf'),6,5)
 print(ggMarginal(corr_pre,type = 'density',groupFill = T))

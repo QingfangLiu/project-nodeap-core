@@ -23,10 +23,7 @@ pre_plea  <- subset(dat, PrePost == 'Pre-meal')$Pleasant
 post_plea <- subset(dat, PrePost == 'Post-meal')$Pleasant
 change_plea <- post_plea - pre_plea
 change_df <- subset(dat, PrePost == 'Pre-meal') %>%
-  mutate(
-    PrePost = 'Change',
-    Pleasant = change_plea
-  )
+  mutate(PrePost = 'Change', Pleasant = change_plea)
 
 # Fit the mixed-effects model
 model0 <- lmer(Pleasant ~ (1|SubID), data = change_df)
@@ -74,11 +71,9 @@ anova(model0,model4)
 # Group by StimLoc and Cond, then apply t-test on Didx
 t_results <- sel_df %>%
   group_by(StimLoc, Cond) %>%
-  summarise(
+  reframe(
     n = n(),
-    t_result = list(t.test(Didx)),
-    .groups = "drop"
-  )
+    t_result = list(t.test(Didx)))
 
 # Extract t-test stats into readable format
 t_results_clean <- t_results %>%
