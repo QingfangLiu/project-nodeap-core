@@ -11,10 +11,12 @@
 # with a similar code examines day 2
 
 
-rm(list = ls())
-source('Setup.R')
 
-load(file.path(pro_dat_dir,'choice_dat_ss_w_base_values.RData'))
+rm(list = ls())
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
+
+load(file.path(processed_dir,'choice_dat_ss_w_base_values.RData'))
 
 #############  Day 1 TMS effect ##############
 

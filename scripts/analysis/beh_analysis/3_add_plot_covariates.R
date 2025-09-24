@@ -1,22 +1,39 @@
 
-
-# this code adds covariates of value diff and Didx to the choice wise data
-# then it plots choices against them
+########################################################
+# Add Value Covariates to Choice Data & Plot Summaries
+#
+# Purpose
+# - Attach learned values (w) to each choice trial
+#   as ValueLeft/ValueRight, remap to ValueSated/ValueNonSated,
+#   compute ValueDiff (Sated - NonSated), merge Didx,
+#   and generate two summary plots of P(choose sated).
+#
+# Inputs (from Setup.R paths)
+# - processed_dir/choice_dat_ss_w_base.RData
+#     -> provides `choice_dat_ss_w_base`
+# - processed_dir/choice_cue_mapping_post.RData
+# - processed_dir/conditioning_cue_mapping.RData
+# - processed_dir/SelectSate_dat.RData
+# - beh_model_dir/results/df_w_per_sub_sess_cuepair.csv
+#
+# Outputs
+# - processed_dir/choice_dat_ss_w_base_values.RData
+#     -> contains `use_choice_dat_ss` with ValueLeft/Right,
+#        ValueSated/NonSated, ValueDiff, and Didx merged
+# - FigPaperDir/Choice_w_values_agg_gradient.pdf  (two-panel figure)
+#
+########################################################
 
 rm(list = ls())
 project_folder <- "/Users/liuq13/project-nodeap-core"
 source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
-#######################
+# ---- Load data ----
+load(file = file.path(processed_dir, "choice_dat_ss_w_base.RData"))            # choice_dat_ss_w_base
+load(file = file.path(processed_dir, "conditioning_cue_mapping.RData"))        # conditioning_cue_mapping
+load(file = file.path(processed_dir, "SelectSate_dat.RData"))                  # SelectSate_dat
 
-load(file = file.path(processed_dir,'choice_dat_ss_w_base.RData'))
-
-load(file = file.path(processed_dir,'choice_cue_mapping_post.RData'))
-load(file = file.path(processed_dir,'conditioning_cue_mapping.RData'))
-
-load(file = file.path(processed_dir,'SelectSate_dat.RData'))
-
-df_w = read.csv(file = file.path(beh_model_dir,'results','df_w_per_sub_sess_cuepair.csv'))
+df_w <- read.csv(file.path(beh_model_dir, "results", "df_w_per_sub_sess_cuepair.csv"))
 
 find_cue_id = function(left,right,sub,sess){
   # input: left, right: cue id in choice task
@@ -76,13 +93,12 @@ use_choice_dat_ss <- use_choice_dat_ss %>%
     by = c("SubID", "Cond")
   )
 
+# ---- Save enriched trialwise data ----
 save(use_choice_dat_ss,
      file = file.path(processed_dir,'choice_dat_ss_w_base_values.RData'))
 
-
-# to round the learned values
+# ---- Round learned values to nearest grid for aggregation ----
 target_values <- seq(0.5, 1, by = 0.05)
-target_values
 use_choice_dat_ss = use_choice_dat_ss %>%
   subset(SubID != 'NODEAP_17') %>%
   mutate(Rounded_ValueSated = as.numeric(sapply(ValueSated, function(x) 
@@ -93,14 +109,14 @@ use_choice_dat_ss = use_choice_dat_ss %>%
 
 # get a summary across subjects and conditions
 summary_use_choice_dat_ss = use_choice_dat_ss %>%
-  dplyr::group_by(Rounded_ValueSated,Rounded_ValueNonSated) %>%
+  group_by(Rounded_ValueSated,Rounded_ValueNonSated) %>%
   reframe(MeanChoice=mean(Choice,na.rm=T),
           nsample=n()) 
 
 summary_use_choice_dat_ss_vdiff = use_choice_dat_ss %>%
   mutate(value_diff = Rounded_ValueSated - Rounded_ValueNonSated) %>%
   mutate(value_diff = factor(value_diff)) %>%
-  dplyr::group_by(value_diff) %>%
+  group_by(value_diff) %>%
   reframe(MeanChoice=mean(Choice,na.rm=T),
           nsample=n()) %>%
   mutate(value_diff = varhandle::unfactor(value_diff))

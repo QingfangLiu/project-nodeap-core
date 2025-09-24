@@ -1,11 +1,7 @@
 
-# ------------------------------------------------------------------------------
-# Setup
-# ------------------------------------------------------------------------------
 rm(list = ls())
-
 project_folder <- "/Users/liuq13/project-nodeap-core"
-source(file.path(project_folder, "scripts", "utils", "Setup.R"))  # paths, libs, theme
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
 # ------------------------------------------------------------------
 # Load odor ratings

@@ -1,20 +1,44 @@
 
-# This code performs mixed-effects modeling and group comparisons on choice data, 
-# focusing only on trials involving a choice between a sated and a non-sated option.
+########################################################
+# Mixed-Effects Modeling of Sated vs Non-Sated Choices
 #
-# The models include two key covariates:
-# (1) Learned cue weights
-# (2) Selective satiation index (Didx), which is expected to positively predict choices of the sated odor.
+# Purpose
+# - Test TMS effects (Day 2) on choosing the sated odor using mixed-effects
+#   logistic models with two covariates:
+#   (1) ValueDiff (w_Sated − w_NonSated), (2) Didx (selective satiation index).
+# - Run leave-one-subject-out (LOSO) robustness checks.
+# - Summarize fitted probabilities by subject/condition and visualize:
+#   (a) group comparisons of fitted choice probabilities,
+#   (b) subject-wise model fit (predicted vs actual),
+#   (c) ROC curves (AUC) per condition and site,
+#   (d) export subject-level actual vs predicted TMS effects.
 #
-# The analysis first examines the effect of TMS on Day 2
-# with a similar code examines day 1
+# Input
+# - processed_dir/choice_dat_ss_w_base_values.RData
+#     -> provides `use_choice_dat_ss` (with ValueDiff, Didx, etc.)
+#
+# Outputs
+# - FigPaperDir/Day2_TMS_ChoiceSatedOdor_fitted.pdf
+# - FigPaperDir/Day2_Choice_fitted_actual.pdf
+# - FigPaperDir/Day2_Choice_roc.pdf
+# - processed_dir/TMS_effect_summary_day2.csv
+#
+# Models
+# - Per-site (pOFC, aOFC):  glmer(Choice ~ Cond + ValueDiff + Didx + base + (1|SubID))
+#   Reduced:                glmer(Choice ~ ValueDiff + Didx + base + (1|SubID))
+#   Compare via LRT (anova).
+# - Combined sites:         glmer(Choice ~ StimLoc * Cond + Didx + ValueDiff + base + (1|SubID))
 
 rm(list = ls())
-source('Setup.R')
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
-load(file.path(pro_dat_dir,'choice_dat_ss_w_base_values.RData'))
+# ---- Data ----
+load(file.path(processed_dir, "choice_dat_ss_w_base_values.RData"))  # use_choice_dat_ss
 
+# =====================================================================
 # pOFC group
+# =====================================================================
 use.dat.pOFC = use_choice_dat_ss %>%
                   subset(PrePost=='Post' & 
                          StimLoc=='pOFC' & 
@@ -27,40 +51,29 @@ model_choice_1 <- glmer(Choice ~ Cond + ValueDiff + Didx +
 model_choice_0 <- glmer(Choice ~ ValueDiff + Didx +
                           base + (1|SubID), 
                         data = use.dat.pOFC,family = 'binomial')
-anova(model_choice_1,model_choice_0) # sig TMS p = 0.00034
+anova(model_choice_1,model_choice_0) # sig TMS p = 0.00036
 summary(model_choice_1)
 # everything sig: TMS, Valuediff, Didx, base
 
 use.dat.pOFC$fitted_choice <- fitted(model_choice_1, type = "response")
 
-# add in response to a reviewer
+# ---- LOSO (pOFC) ----
 
-# get unique subject IDs
 subs <- unique(use.dat.pOFC$SubID)
-
-# storage
-results <- data.frame(SubID = subs, p_value = NA)
+results <- data.frame(SubID = subs, p_value = NA_real_)
 
 for (i in seq_along(subs)) {
   # filter out one subject
   dat_sub <- filter(use.dat.pOFC, SubID != subs[i])
-  
   # fit the two models
   m1 <- glmer(Choice ~ Cond + ValueDiff + Didx + base + (1 | SubID),
               data = dat_sub, family = "binomial")
-  
   m0 <- glmer(Choice ~ ValueDiff + Didx + base + (1 | SubID),
               data = dat_sub, family = "binomial")
-  
-  # likelihood ratio test
   lrt <- anova(m1, m0)
-  
   # extract p-value (2nd row, "Pr(>Chisq)")
   results$p_value[i] <- lrt$`Pr(>Chisq)`[2]
 }
-
-print(results)
-
 
 results_ordered <- results %>% arrange(p_value)
 print(results_ordered)
@@ -76,17 +89,11 @@ summary_stats <- results %>%
 
 print(summary_stats)
 
-# Identify subjects with p > 0.05
-influential <- results %>%
-  filter(p_value > 0.05)
 
-print(influential)
-
-
-
-
-
+# =====================================================================
 # aOFC group
+# =====================================================================
+
 use.dat.aOFC = use_choice_dat_ss %>%
                 subset(PrePost=='Post' & StimLoc=='aOFC' & 
                        Cond %in% c('sham-cTBS','sham-sham')) %>%
@@ -101,33 +108,27 @@ summary(model_choice_0)
 
 use.dat.aOFC$fitted_choice <- fitted(model_choice_0, type = "response")
 
-# get unique SubIDs for aOFC dataset
+# ---- LOSO (aOFC) ----
 subs <- unique(use.dat.aOFC$SubID)
-
-# storage
 results_aOFC <- data.frame(SubID = subs, p_value = NA)
 
 for (i in seq_along(subs)) {
   # filter out one subject
   dat_sub <- filter(use.dat.aOFC, SubID != subs[i])
-  
   # fit full and reduced models
   model1 <- glmer(Choice ~ Cond + ValueDiff + Didx + base + (1 | SubID),
                   data = dat_sub, family = "binomial")
   
   model0 <- glmer(Choice ~ ValueDiff + Didx + base + (1 | SubID),
                   data = dat_sub, family = "binomial")
-  
   # likelihood ratio test
   lrt <- anova(model1, model0, test = "Chisq")
-  
   # store p-value (second row, "Pr(>Chisq)")
   results_aOFC$p_value[i] <- lrt$`Pr(>Chisq)`[2]
 }
 
 # order by p-value
 results_aOFC <- results_aOFC %>% arrange(p_value)
-
 print(results_aOFC)
 
 # summary stats
@@ -138,10 +139,11 @@ summary_stats_aOFC <- results_aOFC %>%
     median_p = median(p_value, na.rm = TRUE),
     mean_p   = mean(p_value, na.rm = TRUE)
   )
-
 print(summary_stats_aOFC)
 
-
+# =====================================================================
+# Plot: fitted probability by Cond (panelled by StimLoc)
+# =====================================================================
 
 summary_choice_ss_fitted_pOFC = use.dat.pOFC %>%
   group_by(SubID,StimLoc,Cond,Sess) %>%
@@ -210,23 +212,18 @@ print(c2)
 dev.off()
 
 
-#########################################
-
-# want to get some plots to indicate good model fit of each group
-# subject-wise correlation
+# =====================================================================
+# Subject-wise predicted vs actual (correlations)
+# =====================================================================
 get_subject_summary <- function(data, stimloc_label) {
   data %>%
-    dplyr::group_by(SubID, Cond) %>%
-    summarise(
+    group_by(SubID, Cond) %>%
+    reframe(
       mean_actual = mean(Choice),
-      mean_predicted = mean(fitted_choice),
-      .groups = "drop"  # optional: remove grouping
-    ) %>%
+      mean_predicted = mean(fitted_choice)) %>%
     mutate(StimLoc = stimloc_label)
 }
 
-
-# Apply to both groups
 subject_summary_pOFC <- get_subject_summary(use.dat.pOFC, "pOFC")
 subject_summary_aOFC <- get_subject_summary(use.dat.aOFC, "aOFC")
 
@@ -244,8 +241,8 @@ cor_text_aOFC <- paste0("r = ", round(cor_aOFC, 2))
 label_df <- data.frame(
   StimLoc = c("pOFC", "aOFC"),
   label = c(cor_text_pOFC, cor_text_aOFC),
-  x = 0.2,  # adjust as needed
-  y = 0.9   # adjust as needed
+  x = 0.2,  
+  y = 0.9  
 )
 
 bt_sub_corr = ggplot(combined_summary, aes(x = mean_predicted, y = mean_actual, color = Cond)) +
@@ -276,46 +273,9 @@ pdf(file.path(FigPaperDir,'Day2_Choice_fitted_actual.pdf'),8,4)
 print(bt_sub_corr)
 dev.off()
 
-#########################################
-
-# Step 1: Filter out actual values for both conditions
-actual_sham <- combined_summary %>%
-  filter(Cond == "sham-sham") %>%
-  select(SubID, StimLoc, mean_actual) %>%
-  rename(mean_actual_sham = mean_actual)
-
-actual_cTBS <- combined_summary %>%
-  filter(Cond == "sham-cTBS") %>%
-  select(SubID, StimLoc, mean_actual) %>%
-  rename(mean_actual_cTBS = mean_actual)
-
-# Step 2: Merge and calculate actual TMS effect
-actual_effect_df <- left_join(actual_sham, actual_cTBS, by = c("SubID", "StimLoc")) %>%
-  mutate(TMS_effect_actual = mean_actual_cTBS - mean_actual_sham)
-
-# Step 3: Repeat for predicted values
-predicted_sham <- combined_summary %>%
-  filter(Cond == "sham-sham") %>%
-  select(SubID, StimLoc, mean_predicted) %>%
-  rename(mean_predicted_sham = mean_predicted)
-
-predicted_cTBS <- combined_summary %>%
-  filter(Cond == "sham-cTBS") %>%
-  select(SubID, StimLoc, mean_predicted) %>%
-  rename(mean_predicted_cTBS = mean_predicted)
-
-predicted_effect_df <- left_join(predicted_sham, predicted_cTBS, by = c("SubID", "StimLoc")) %>%
-  mutate(TMS_effect_predicted = mean_predicted_cTBS - mean_predicted_sham)
-
-# Step 4: Merge actual and predicted effect
-tms_effect_summary <- left_join(actual_effect_df %>% select(SubID, StimLoc, TMS_effect_actual),
-                                predicted_effect_df %>% select(SubID, StimLoc, TMS_effect_predicted),
-                                by = c("SubID", "StimLoc"))
-
-# Step 5: Save to CSV
-write_csv(tms_effect_summary, file.path(pro_dat_dir,"TMS_effect_summary_day2.csv"))
-
-#########################################
+# =====================================================================
+# ROC curves and AUC per condition/site
+# =====================================================================
 
 library(pROC)
 
@@ -363,7 +323,6 @@ auc_labels <- auc_summary %>%
     )
   )
 
-# Plot
 roc = ggplot(roc_df_all, aes(x = FPR, y = TPR, color = Cond)) +
   geom_line(linewidth = 1) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
@@ -389,9 +348,52 @@ pdf(file.path(FigPaperDir,'Day2_Choice_roc.pdf'),8,4)
 print(roc)
 dev.off()
 
-##################################
+# =====================================================================
+# Subject-level actual vs predicted TMS effect (export)
+# =====================================================================
 
-# put aOFC and pOFC together testing interactions
+# Step 1: Filter out actual values for both conditions
+actual_sham <- combined_summary %>%
+  filter(Cond == "sham-sham") %>%
+  select(SubID, StimLoc, mean_actual) %>%
+  rename(mean_actual_sham = mean_actual)
+
+actual_cTBS <- combined_summary %>%
+  filter(Cond == "sham-cTBS") %>%
+  select(SubID, StimLoc, mean_actual) %>%
+  rename(mean_actual_cTBS = mean_actual)
+
+# Step 2: Merge and calculate actual TMS effect
+actual_effect_df <- left_join(actual_sham, actual_cTBS, by = c("SubID", "StimLoc")) %>%
+  mutate(TMS_effect_actual = mean_actual_cTBS - mean_actual_sham)
+
+# Step 3: Repeat for predicted values
+predicted_sham <- combined_summary %>%
+  filter(Cond == "sham-sham") %>%
+  select(SubID, StimLoc, mean_predicted) %>%
+  rename(mean_predicted_sham = mean_predicted)
+
+predicted_cTBS <- combined_summary %>%
+  filter(Cond == "sham-cTBS") %>%
+  select(SubID, StimLoc, mean_predicted) %>%
+  rename(mean_predicted_cTBS = mean_predicted)
+
+predicted_effect_df <- left_join(predicted_sham, predicted_cTBS, by = c("SubID", "StimLoc")) %>%
+  mutate(TMS_effect_predicted = mean_predicted_cTBS - mean_predicted_sham)
+
+# Step 4: Merge actual and predicted effect
+tms_effect_summary <- left_join(actual_effect_df %>% select(SubID, StimLoc, TMS_effect_actual),
+                                predicted_effect_df %>% select(SubID, StimLoc, TMS_effect_predicted),
+                                by = c("SubID", "StimLoc"))
+
+# Step 5: Save to CSV
+write_csv(tms_effect_summary, file.path(processed_dir,"TMS_effect_summary_day2.csv"))
+
+
+# =====================================================================
+# Combined model with StimLoc × Cond interaction
+# =====================================================================
+
 use.dat = use_choice_dat_ss %>%
                    subset(PrePost=='Post' &
                    Cond %in% c('sham-cTBS','sham-sham')) %>%
