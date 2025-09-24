@@ -7,6 +7,8 @@ This repository contains all code, behavioral data, MRI derivatives, and figures
 Below is the folder structure with brief descriptions.
 
 
+
+
 ```
 project-nodeap-core/
 ├─ atlas_masks/                # Atlas files and ROI masks for fMRI analysis
@@ -40,6 +42,16 @@ project-nodeap-core/
 ```
 
 For details on the hierarchical Bayesian behavioral modeling used in this project, see the dedicated [README in `beh_modeling/`](./beh_modeling/README.md).
+
+The resting-state fMRI data have been publicly deposited on [OpenNeuro (ds006693)](https://openneuro.org/datasets/ds006693).
+
+## Citation
+
+Please cite our paper if you use this dataset or code:
+
+Liu et al., *Distinct contributions of anterior and posterior orbitofrontal cortex to outcome-guided behavior*,  
+*Current Biology* (in press). DOI will be added when available.
+
 
 ## Summary of Behavioral Data Issues
  
