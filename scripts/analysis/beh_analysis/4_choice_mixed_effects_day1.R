@@ -1,30 +1,99 @@
 
-
-# This code performs mixed-effects modeling and group comparisons on choice data, 
-# focusing only on trials involving a choice between a sated and a non-sated option.
+########################################################
+# Mixed-Effects Modeling of Sated vs Non-Sated Choices — Day 1
 #
-# The models include two key covariates:
-# (1) Learned cue weights
-# (2) Selective satiation index (Didx), which is expected to positively predict choices of the sated odor.
+# Purpose
+# - Test Day-1 TMS effects on choosing the sated odor using mixed-effects
+#   logistic models with covariates: ValueDiff (w_Sated − w_NonSated) and Didx.
+# - Run LOSO robustness checks per site (aOFC, pOFC).
+# - Summarize fitted probabilities and visualize group differences,
+#   subject-wise fit (predicted vs actual), and ROC/AUC.
+# - Export subject-level actual vs predicted TMS effects.
 #
-# The analysis first examines the effect of TMS on Day 1
-# with a similar code examines day 2
-
-
+# Input
+# - processed_dir/choice_dat_ss_w_base_values.RData
+#     -> provides `use_choice_dat_ss` with ValueDiff, Didx, etc.
+#
+# Outputs
+# - FigPaperDir/Day1_TMS_ChoiceSatedOdor_fitted.pdf
+# - FigPaperDir/Day1_Choice_fitted_actual.pdf
+# - FigPaperDir/Day1_Choice_roc.pdf
+# - processed_dir/TMS_effect_summary_day1.csv
+#
+# Models
+# - Site models (aOFC, pOFC):
+#     Full:    glmer(Choice ~ Cond [+ Sess] + Didx + ValueDiff + base + (1|SubID))
+#     Reduced: glmer(Choice ~            [Sess] + Didx + ValueDiff + base + (1|SubID))
+#     Compare via LRT for Cond (and Sess where used).
+# - Combined sites:
+#     glmer(Choice ~ StimLoc * Cond + Didx + ValueDiff + base + (1|SubID))
+#
+########################################################
 
 rm(list = ls())
 project_folder <- "/Users/liuq13/project-nodeap-core"
 source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
-load(file.path(processed_dir,'choice_dat_ss_w_base_values.RData'))
+# ---- Data ----
+load(file.path(processed_dir, "choice_dat_ss_w_base_values.RData"))  # use_choice_dat_ss
 
-#############  Day 1 TMS effect ##############
+# =====================================================================
+# Day 1 — aOFC group
+# =====================================================================
 
-# pOFC subjects
-# note NODEAP_17 is a posterior cTBS subject
-# with only sess 1 (sham-cTBS) and 3 (sham-sham) so remove this
-# when analyzing day 1 TMS effect
+use.dat.aOFC = use_choice_dat_ss %>%
+  subset(PrePost=='Post' & StimLoc=='aOFC' &
+           Cond %in% c('cTBS-sham','sham-sham')) %>%
+  filter(complete.cases(.))   # remove all NA trials
 
+model_choice_0 <- glmer(Choice ~ Didx + ValueDiff + base + (1|SubID), 
+                        data = use.dat.aOFC,family = 'binomial')
+model_choice_1 <- glmer(Choice ~ Cond + Didx + ValueDiff + base + (1|SubID), 
+                        data = use.dat.aOFC,family = 'binomial')
+anova(model_choice_1,model_choice_0) # marginal effect of TMS, p=0.066
+summary(model_choice_0)
+summary(model_choice_1)
+
+# Add Sess and interaction with Cond
+model_choice_2 <- glmer(Choice ~ Sess + Didx + ValueDiff + base + (1|SubID), 
+                        data = use.dat.aOFC,family = 'binomial')
+model_choice_3 <- glmer(Choice ~ Cond * Sess + Didx + ValueDiff + base + (1|SubID), 
+                        data = use.dat.aOFC,family = 'binomial')
+anova(model_choice_2,model_choice_0) # sig. effect of Sess, p=0.0019
+anova(model_choice_2,model_choice_3) # adding Cond*Sess improved model fit compared to model w/ only Sess
+summary(model_choice_3)
+
+use.dat.aOFC$fitted_choice <- fitted(model_choice_3, type = "response")
+
+# ---- LOSO (aOFC) — Cond effect within the Cond*Sess model ----
+subs <- unique(use.dat.aOFC$SubID)
+results_aOFC_null <- data.frame(SubID = subs, p_value = NA)
+
+for (i in seq_along(subs)) {
+  dat_sub <- filter(use.dat.aOFC, SubID != subs[i])
+  m3 <- glmer(Choice ~ Cond * Sess + Didx + ValueDiff + base + (1|SubID), 
+              data = dat_sub,family = 'binomial')
+  results_aOFC_null$p_value[i] = summary(m3)$coefficients["CondcTBS-sham", "Pr(>|z|)"]
+}
+
+results_aOFC_null <- results_aOFC_null %>% arrange(p_value)
+print(results_aOFC_null)
+
+# summary stats
+summary_stats_aOFC_null <- results_aOFC_null %>%
+  summarise(
+    min_p   = min(p_value, na.rm = TRUE),
+    max_p   = max(p_value, na.rm = TRUE),
+    median_p = median(p_value, na.rm = TRUE),
+    mean_p   = mean(p_value, na.rm = TRUE)
+  )
+
+print(summary_stats_aOFC_null)
+
+# =====================================================================
+# Day 1 — pOFC group
+# (Exclude NODEAP_17: posterior cTBS subject without relevant Day1 sessions)
+# =====================================================================
 use.dat.pOFC = use_choice_dat_ss %>%
   subset((!SubID=='NODEAP_17') &
            PrePost=='Post' & StimLoc=='pOFC' & 
@@ -35,7 +104,7 @@ model_choice_0 <- glmer(Choice ~ Didx + ValueDiff + base + (1|SubID),
                         data = use.dat.pOFC,family = 'binomial')
 model_choice_1 <- glmer(Choice ~ Cond + Didx + ValueDiff + base + (1|SubID), 
                         data = use.dat.pOFC,family = 'binomial')
-anova(model_choice_1,model_choice_0) # no effect of TMS, p=0.2438
+anova(model_choice_1,model_choice_0) # no effect of TMS, p=0.24
 summary(model_choice_0)
 # sig. valuediff, base, marginal sig. Didx
 
@@ -44,7 +113,7 @@ model_choice_2 <- glmer(Choice ~ Didx + Sess + ValueDiff + base + (1|SubID),
                         data = use.dat.pOFC,family = 'binomial')
 model_choice_3 <- glmer(Choice ~ Cond + Didx + Sess + ValueDiff + base + (1|SubID), 
                         data = use.dat.pOFC,family = 'binomial')
-anova(model_choice_2,model_choice_3) # no effect of TMS, p=0.244
+anova(model_choice_2,model_choice_3) # no effect of TMS, p=0.24
 summary(model_choice_2)
 # sig. value diff, base
 # Didx, Sess not sig
@@ -52,11 +121,8 @@ anova(model_choice_2,model_choice_0) # sess was not sig, p=0.14
 
 use.dat.pOFC$fitted_choice <- fitted(model_choice_0, type = "response")
 
-
-# unique subject IDs
+# ---- LOSO (pOFC) — LRT on Cond with Sess in model ----
 subs <- unique(use.dat.pOFC$SubID)
-
-# storage
 results_pOFC_null <- data.frame(SubID = subs, p_value = NA)
 
 for (i in seq_along(subs)) {
@@ -94,69 +160,9 @@ summary_stats_pOFC_null <- results_pOFC_null %>%
 print(summary_stats_pOFC_null)
 
 
-
-
-
-
-
-# aOFC subjects
-use.dat.aOFC = use_choice_dat_ss %>%
-  subset(PrePost=='Post' & StimLoc=='aOFC' &
-           Cond %in% c('cTBS-sham','sham-sham')) %>%
-  filter(complete.cases(.))   # remove all NA trials
-
-model_choice_0 <- glmer(Choice ~ Didx + ValueDiff + base + (1|SubID), 
-                        data = use.dat.aOFC,family = 'binomial')
-model_choice_1 <- glmer(Choice ~ Cond + Didx + ValueDiff + base + (1|SubID), 
-                        data = use.dat.aOFC,family = 'binomial')
-anova(model_choice_1,model_choice_0) # marginal effect of TMS, p=0.066
-summary(model_choice_0)
-summary(model_choice_1)
-
-model_choice_2 <- glmer(Choice ~ Sess + Didx + ValueDiff + base + (1|SubID), 
-                        data = use.dat.aOFC,family = 'binomial')
-model_choice_3 <- glmer(Choice ~ Cond * Sess + Didx + ValueDiff + base + (1|SubID), 
-                        data = use.dat.aOFC,family = 'binomial')
-anova(model_choice_2,model_choice_0) # sig. effect of Sess, p=0.0019
-anova(model_choice_2,model_choice_3) # adding Cond*Sess improved model fit compared to model w/ only Sess
-summary(model_choice_3)
-
-use.dat.aOFC$fitted_choice <- fitted(model_choice_3, type = "response")
-
-
-# unique subject IDs
-subs <- unique(use.dat.aOFC$SubID)
-
-# storage
-results_aOFC_null <- data.frame(SubID = subs, p_value = NA)
-
-for (i in seq_along(subs)) {
-  # filter out one subject
-  dat_sub <- filter(use.dat.aOFC, SubID != subs[i])
-  
-  # fit full and reduced models
-  m3 <- glmer(Choice ~ Cond * Sess + Didx + ValueDiff + base + (1|SubID), 
-                          data = dat_sub,family = 'binomial')
-  results_aOFC_null$p_value[i] = summary(m3)$coefficients["CondcTBS-sham", "Pr(>|z|)"]
-
-}
-
-results_aOFC_null <- results_aOFC_null %>% arrange(p_value)
-print(results_aOFC_null)
-
-# summary stats
-summary_stats_aOFC_null <- results_aOFC_null %>%
-  summarise(
-    min_p   = min(p_value, na.rm = TRUE),
-    max_p   = max(p_value, na.rm = TRUE),
-    median_p = median(p_value, na.rm = TRUE),
-    mean_p   = mean(p_value, na.rm = TRUE)
-  )
-
-print(summary_stats_aOFC_null)
-
-
-
+# =====================================================================
+# Plot: fitted probability by Cond (panelled by StimLoc)
+# =====================================================================
 
 # calculate session-wise summary of choices
 summary_choice_ss_fitted_pOFC = use.dat.pOFC %>%
@@ -169,7 +175,6 @@ summary_choice_ss_fitted = rbind(summary_choice_ss_fitted_pOFC,
                                  summary_choice_ss_fitted_aOFC)
 summary_choice_ss_fitted = summary_choice_ss_fitted %>%
   arrange(SubID)
-
 
 p_values <- data.frame(
   StimLoc = c("aOFC", "pOFC"),  
@@ -223,54 +228,15 @@ pdf(file.path(FigPaperDir,'Day1_TMS_ChoiceSatedOdor_fitted.pdf'),7,4)
 print(c1)
 dev.off()
 
-
-
-library(dplyr)
-library(ggplot2)
-
-# Filter only the two conditions of interest
-plot_data <- use.dat.aOFC %>%
-  filter(Cond %in% c("sham-sham", "cTBS-sham")) %>%
-  group_by(SubID, Sess, StimOrder_day1, Cond) %>%
-  reframe(mean = mean(Choice,na.rm=T)) 
-  #reframe(mean = mean(fitted_choice,na.rm=T))
-
-# Plot
-ggplot(plot_data, aes(x = Cond, y = mean, fill = Cond)) +
-  geom_boxplot(alpha = 0.6, outlier.shape = NA, aes(group = as.factor(Cond))) +
-  geom_jitter(width = 0.2, alpha = 0.5) +  # optional: show individual points
-  facet_wrap(~ StimOrder_day1) +
-  scale_fill_manual(values = use.col.conds) +
-  labs(
-    title = NULL,
-    x = NULL,
-    y = "Choosing sated odors"
-  ) +
-  common + theme(legend.position = "none")
-
-ggplot(plot_data, aes(x = Sess, y = mean, fill = Cond)) +
-  geom_boxplot(alpha = 0.6, outlier.shape = NA, aes(group = as.factor(Sess))) +
-  geom_jitter(width = 0.2, alpha = 0.5) +  # optional: show individual points
-  facet_wrap(~ StimOrder_day1) +
-  scale_fill_manual(values = use.col.conds) +
-  labs(
-    title = NULL,
-    x = NULL,
-    y = "Choosing sated odors"
-  ) +
-  common + theme(legend.position = "none")
-
-
-
+# =====================================================================
+# Subject-wise predicted vs actual (correlations)
+# =====================================================================
 
 get_subject_summary <- function(data, stimloc_label) {
-  data %>%
-    dplyr::group_by(SubID, Cond) %>%
-    summarise(
+  data %>% group_by(SubID, Cond) %>%
+    reframe(
       mean_actual = mean(Choice),
-      mean_predicted = mean(fitted_choice),
-      .groups = "drop"  # optional: remove grouping
-    ) %>%
+      mean_predicted = mean(fitted_choice)) %>%
     mutate(StimLoc = stimloc_label)
 }
 
@@ -324,49 +290,9 @@ pdf(file.path(FigPaperDir,'Day1_Choice_fitted_actual.pdf'),8,4)
 print(bt_sub_corr)
 dev.off()
 
-
-#########################################
-
-# Step 1: Filter out actual values for both conditions
-actual_sham <- combined_summary %>%
-  filter(Cond == "sham-sham") %>%
-  select(SubID, StimLoc, mean_actual) %>%
-  rename(mean_actual_sham = mean_actual)
-
-actual_cTBS <- combined_summary %>%
-  filter(Cond == "cTBS-sham") %>%
-  select(SubID, StimLoc, mean_actual) %>%
-  rename(mean_actual_cTBS = mean_actual)
-
-# Step 2: Merge and calculate actual TMS effect
-actual_effect_df <- left_join(actual_sham, actual_cTBS, by = c("SubID", "StimLoc")) %>%
-  mutate(TMS_effect_actual = mean_actual_cTBS - mean_actual_sham)
-
-# Step 3: Repeat for predicted values
-predicted_sham <- combined_summary %>%
-  filter(Cond == "sham-sham") %>%
-  select(SubID, StimLoc, mean_predicted) %>%
-  rename(mean_predicted_sham = mean_predicted)
-
-predicted_cTBS <- combined_summary %>%
-  filter(Cond == "cTBS-sham") %>%
-  select(SubID, StimLoc, mean_predicted) %>%
-  rename(mean_predicted_cTBS = mean_predicted)
-
-predicted_effect_df <- left_join(predicted_sham, predicted_cTBS, by = c("SubID", "StimLoc")) %>%
-  mutate(TMS_effect_predicted = mean_predicted_cTBS - mean_predicted_sham)
-
-# Step 4: Merge actual and predicted effect
-tms_effect_summary <- left_join(actual_effect_df %>% select(SubID, StimLoc, TMS_effect_actual),
-                                predicted_effect_df %>% select(SubID, StimLoc, TMS_effect_predicted),
-                                by = c("SubID", "StimLoc"))
-
-# Step 5: Save to CSV
-write_csv(tms_effect_summary, file.path(pro_dat_dir,"TMS_effect_summary_day1.csv"))
-
-
-
-#########################################
+# =====================================================================
+# ROC curves and AUC per condition/site
+# =====================================================================
 
 library(pROC)
 
@@ -414,8 +340,6 @@ auc_labels <- auc_summary %>%
     )
   )
 
-
-# Plot
 roc = ggplot(roc_df_all, aes(x = FPR, y = TPR, color = Cond)) +
   geom_line(linewidth = 1) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
@@ -441,11 +365,52 @@ pdf(file.path(FigPaperDir,'Day1_Choice_roc.pdf'),8,4)
 print(roc)
 dev.off()
 
+# =====================================================================
+# Subject-level actual vs predicted TMS effect (export)
+# =====================================================================
 
-##################################
+# Step 1: Filter out actual values for both conditions
+actual_sham <- combined_summary %>%
+  filter(Cond == "sham-sham") %>%
+  select(SubID, StimLoc, mean_actual) %>%
+  rename(mean_actual_sham = mean_actual)
 
-# put aOFC and pOFC together) 
-# to see if there's interaction b/t stim loc & TMS cond
+actual_cTBS <- combined_summary %>%
+  filter(Cond == "cTBS-sham") %>%
+  select(SubID, StimLoc, mean_actual) %>%
+  rename(mean_actual_cTBS = mean_actual)
+
+# Step 2: Merge and calculate actual TMS effect
+actual_effect_df <- left_join(actual_sham, actual_cTBS, by = c("SubID", "StimLoc")) %>%
+  mutate(TMS_effect_actual = mean_actual_cTBS - mean_actual_sham)
+
+# Step 3: Repeat for predicted values
+predicted_sham <- combined_summary %>%
+  filter(Cond == "sham-sham") %>%
+  select(SubID, StimLoc, mean_predicted) %>%
+  rename(mean_predicted_sham = mean_predicted)
+
+predicted_cTBS <- combined_summary %>%
+  filter(Cond == "cTBS-sham") %>%
+  select(SubID, StimLoc, mean_predicted) %>%
+  rename(mean_predicted_cTBS = mean_predicted)
+
+predicted_effect_df <- left_join(predicted_sham, predicted_cTBS, by = c("SubID", "StimLoc")) %>%
+  mutate(TMS_effect_predicted = mean_predicted_cTBS - mean_predicted_sham)
+
+# Step 4: Merge actual and predicted effect
+tms_effect_summary <- left_join(actual_effect_df %>% select(SubID, StimLoc, TMS_effect_actual),
+                                predicted_effect_df %>% select(SubID, StimLoc, TMS_effect_predicted),
+                                by = c("SubID", "StimLoc"))
+
+# Step 5: Save to CSV
+write_csv(tms_effect_summary, file.path(processed_dir,"TMS_effect_summary_day1.csv"))
+
+
+# =====================================================================
+# Combined model with StimLoc × Cond interaction (Day 1)
+# =====================================================================
+
 use.dat = subset(use_choice_dat_ss, PrePost=='Post' &
                    Cond %in% c('cTBS-sham','sham-sham'))
 model_choice_2 <- glmer(Choice ~ StimLoc * Cond + Didx + ValueDiff + base + (1|SubID), 
