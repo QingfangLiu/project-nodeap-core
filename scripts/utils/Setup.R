@@ -23,6 +23,9 @@ FigPaperDir = file.path(project_folder,'Figs_generated')
 # where to save processed behavioral data
 processed_dir <- file.path(project_folder, "beh_data_processed")
 
+# where to save found behavioral data
+beh_found_dir <- file.path(project_folder, "beh_data_found")
+
 # where the learning modeling work is saved
 beh_model_dir <- file.path(project_folder, "beh_modeling")
 

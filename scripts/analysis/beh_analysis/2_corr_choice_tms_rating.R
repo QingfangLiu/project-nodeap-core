@@ -1,27 +1,58 @@
 
+# ======================================================================
+# Goal
+#   Correlate choice updating (ChoiceChangeAB) with perceived TMS 
+#   discomfort/intensity ratings, separately for Day 2 and Day 1, and
+#   also correlate condition differences (cTBS − sham).
+#
+# Inputs
+#   - processed_dir/Summary_Choice_corrected_dat.RData 
+#       -> expects object: summary_choice_corrected
+#   - beh_found_dir/Survey_uncomf_strong.xlsx 
+#       -> columns used: SubID, TMSSess, sess_name, uncom, strong, StimLoc
+#
+# Outputs (saved to FigPaperDir)
+#   - Corr_choice_w_Day2TMS_ratings_aOFC.pdf
+#   - Corr_choice_w_Day2TMS_ratings_pOFC.pdf
+#   - Corr_choice_w_Day2TMS_ratings_comp.pdf
+#   - Corr_choice_w_Day1TMS_ratings_aOFC.pdf
+#   - Corr_choice_w_Day1TMS_ratings_pOFC.pdf
+#   - Corr_choice_w_Day1TMS_ratings_comp.pdf
+#
+# Notes
+#   - rating = mean(uncom, strong)
+#   - Day 2 uses TMSSess in {2,4,6} and Cond in {'sham-sham','sham-cTBS'}
+#   - Day 1 uses TMSSess in {1,3,5} and Cond in {'sham-sham','cTBS-sham'}
+#   - One session is excluded: SubID=='NODEAP_17' & sess_name=='S2D2' (Day 2)
+# ======================================================================
+
 rm(list = ls())
 project_folder <- "/Users/liuq13/project-nodeap-core"
 source(file.path(project_folder, "scripts", "utils", "Setup.R"))
 
-# this code correlates the choice updating with TMS ratings
+# ----------------------------------------------------------------------
+# 0) Load data
+# ----------------------------------------------------------------------
 load(file = file.path(processed_dir,'Summary_Choice_corrected_dat.RData'))
+survey_file = file.path(beh_found_dir,'Survey_uncomf_strong.xlsx')
 
-###############################
-### correlate the choice updating with TMS ratings
-###############################
+# ======================================================================
+# Day 2: TMSSess {2,4,6}, Cond ∈ {'sham-sham','sham-cTBS'}
+# ======================================================================
 
-###### Day 2
+# 1) Prepare aligned data (ensure session ordering matches survey)
 summary_use = summary_choice_corrected %>%
-  arrange(SubID,StimLoc,Sess)
+  arrange(SubID,StimLoc,Sess) 
 
-survey_dat = read.xlsx('../ProcessedData/Survey_uncomf_strong.xlsx') %>%
-  subset(TMSSess %in% c(2,4,6)) %>%
-  subset(!(SubID=='NODEAP_17' & sess_name=='S2D2')) %>%
+survey_dat = read.xlsx(survey_file) %>%
+  subset(TMSSess %in% c(2,4,6)) %>%                     # only day 2 sessions
+  subset(!(SubID=='NODEAP_17' & sess_name=='S2D2')) %>% # missing behavioral data
   mutate(rating = (uncom + strong)/2) %>%
   mutate(ChoiceChangeAB = summary_use$ChoiceChangeAB,
          Cond = summary_use$Cond) %>%
   subset(Cond %in% c('sham-sham','sham-cTBS'))
 
+# 2) Correlations within each ROI (aOFC / pOFC)
 for(roi in c('aOFC','pOFC')){
   if(roi=='aOFC') ylab_text = 'P(SA) \n (post - pre-meal)'
   if(roi=='pOFC') ylab_text = ''
@@ -51,12 +82,13 @@ for(roi in c('aOFC','pOFC')){
   theme(legend.position = 'topright')
 
 figname = paste0('Corr_choice_w_Day2TMS_ratings_',roi,'.pdf')
-pdf(file.path(FigDir,figname),5,4)
+pdf(file.path(FigPaperDir,figname),5,4)
 print(ggMarginal(corr3,type = 'density',groupFill = T))
 dev.off()
 }
 
-# Subset the data to only include the two conditions and calculate differences
+# 3) Correlation of condition differences (cTBS − sham) pooled across ROIs
+
 diff_data <- survey_dat %>%
   group_by(SubID) %>%
   reframe(
@@ -64,9 +96,6 @@ diff_data <- survey_dat %>%
     rating_diff = rating[Cond == 'sham-cTBS'] - rating[Cond == 'sham-sham'],
     ChoiceChangeAB_diff = ChoiceChangeAB[Cond == 'sham-cTBS'] - ChoiceChangeAB[Cond == 'sham-sham']
   )
-
-# Plot the correlation of the differences
-
 corr4 = diff_data %>%
   ggplot(aes(x = rating_diff, y = ChoiceChangeAB_diff, 
              color = StimLoc, fill = StimLoc)) +
@@ -82,17 +111,21 @@ corr4 = diff_data %>%
   common
 
 figname = 'Corr_choice_w_Day2TMS_ratings_comp.pdf'
-pdf(file.path(FigDir,figname),5,4)
+pdf(file.path(FigPaperDir,figname),5,4)
 print(ggMarginal(corr4,type = 'density'))
 dev.off()
 
 
-###### Day 1
+# ======================================================================
+# Day 1: TMSSess {1,3,5}, Cond ∈ {'sham-sham','cTBS-sham'}
+# ======================================================================
+
+# 1) Prepare aligned data (exclude NODEAP_17 entirely for Day 1 analyses)
 summary_use_Day1TMS = summary_choice_corrected %>%
   subset(!SubID=='NODEAP_17') %>%
   arrange(SubID,StimLoc,Sess)
 
-survey_dat = read.xlsx('../ProcessedData/Survey_uncomf_strong.xlsx') %>%
+survey_dat = read.xlsx(survey_file) %>%
   subset(TMSSess %in% c(1,3,5)) %>%
   subset(!SubID=='NODEAP_17') %>%
   mutate(rating = (uncom + strong)/2) %>%
@@ -100,6 +133,7 @@ survey_dat = read.xlsx('../ProcessedData/Survey_uncomf_strong.xlsx') %>%
          Cond = summary_use_Day1TMS$Cond) %>%
   subset(Cond %in% c('sham-sham','cTBS-sham'))
 
+# 2) Correlations within each ROI (aOFC / pOFC)
 for(roi in c('aOFC','pOFC')){
   
   if(roi=='aOFC') ylab_text = 'P(SA) \n (post - pre-meal)'
@@ -130,11 +164,12 @@ for(roi in c('aOFC','pOFC')){
   theme(legend.position = 'topright')
 
 figname = paste0('Corr_choice_w_Day1TMS_ratings_',roi,'.pdf')
-pdf(file.path(FigDir,figname),5,4)
+pdf(file.path(FigPaperDir,figname),5,4)
 print(ggMarginal(corr5,type = 'density',groupFill = T))
 dev.off()
 }
 
+# 3) Correlation of condition differences (cTBS − sham) pooled across ROIs
 diff_data <- survey_dat %>%
   group_by(SubID) %>%
   reframe(
@@ -159,7 +194,7 @@ corr6 = diff_data %>%
   common
 
 figname = 'Corr_choice_w_Day1TMS_ratings_comp.pdf'
-pdf(file.path(FigDir,figname),5,4)
+pdf(file.path(FigPaperDir,figname),5,4)
 print(ggMarginal(corr6,type = 'density'))
 dev.off()
 
