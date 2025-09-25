@@ -1,29 +1,54 @@
 
+%% ========================================================================
+%  Script: realign_rest_e1_all_sessions.m
+%
+%  Purpose
+%    - Collect echo-1 (e1) NIfTI volumes across rest sessions for each subject
+%    - Run SPM realign (estimate only) on the concatenated session lists
+%    - Handle subject/session idiosyncrasies (e.g., NODEAP_44 short run)
+%
+%  Assumed layout (same as convert script)
+%    dat_folder/
+%      NODEAP_XX/
+%        ├─ nifti/
+%        │   └─ <Sess>_me/     % contains <Sess>_rest..._e1.nii (and e2/e3)
+%        └─ MRIjobs/
+%
+%  Notes
+%    - Default nscans = 310; NODEAP_44/S1D1 = 205
+%    - For NODEAP_41, S3D2 is realigned separately from the other sessions
+%    - This script performs Estimate only—it does not create r*.nii resliced images and does not modify NIfTI headers on disk.
+%    - SPM writes per-image .mat files storing the estimated rigid-body transforms and an rp_*.txt file 
+%    - (6 motion parameters per volume) for each session.
+% ========================================================================
 
+%% 0) Environment --------------------------------------------------------------
 clear; clc;
-HomeDir = '/Volumes/X9Pro/NODEAP/MRI';
-[~, scriptName, ~] = fileparts(mfilename('fullpath'));
 
-SubIDlist = dir(fullfile(HomeDir, 'NODEAP*'));
-SubIDlist = SubIDlist([SubIDlist.isdir]); % only keep directories
-nSubIDlist = length(SubIDlist);
+dat_folder   = '/Volumes/X9Pro/NODEAP/MRI';
+
+%% 1) Discover subjects ----------------------------------------------------------
+SubIDlist = dir(fullfile(dat_folder, 'NODEAP*'));
+SubIDlist = SubIDlist([SubIDlist.isdir]);       % keep directories only
+nSub      = numel(SubIDlist);
 
 rest_names = {'D0','S1D1','S1D2','S2D1','S2D2','S3D1','S3D2'};
 n_rest_names = length(rest_names);
 
-spm fmri
+% Initialize SPM
+spm fmri;
+spm_jobman('initcfg');
 
-%%
+%% 1) Loop over subjects -------------------------------------------------------
 for subj = 1:nSubIDlist
-
     SubID = SubIDlist(subj).name;
-    SubDir = fullfile(HomeDir,SubID);
+    SubDir = fullfile(dat_folder,SubID);
     niidir = fullfile(SubDir, 'nifti');
     jobdir = fullfile(SubDir, 'MRIjobs');
     
-    output_file = sprintf('output_%s_%s.txt', scriptName, string(datetime));
-    diary(output_file); % keep notes of outputs
+    fprintf('\n================ %s ================\n', SubID);
     
+    % Collect echo-1 filenames across available sessions
     rctr = 0; % count rest sessions (in case of missing session)
     filename = []; % all e1 scans across all sessions
 
@@ -31,14 +56,16 @@ for subj = 1:nSubIDlist
         curr_rest = rest_names{r};
         medir = fullfile(niidir, sprintf('%s_me',curr_rest)); % path to me data
 
-        % this session has fewer volumes due to scanning cutoff
+        % Expected #volumes
         if strcmp(SubID,'NODEAP_44') && strcmp(curr_rest,'S1D1')
             nscans = 205;
         else
             nscans = 310;
         end
     
+        % Skip if session not present
         if ~exist(medir,'dir')
+            fprintf('  ↳ Missing NIfTI dir (skip): %s\n', medir);
             continue;
         end
 
@@ -52,9 +79,7 @@ for subj = 1:nSubIDlist
 
     end
     
-%% realign using e1 from all session's data
-
-disp('Realign using e1 data from all sessions.')
+%% 2) Realign (estimate) setup --------------------------------------------
 matlabbatch = [];
 
 if strcmp(SubID,'NODEAP_41') % for NODEAP_41: S3D2 session is realigned separately
@@ -90,21 +115,6 @@ end
 fname = fullfile(jobdir, 'me_realignment_e1_all_sessions.mat');
 save(fname, 'matlabbatch');
 spm_jobman('run', matlabbatch);
-
-% move the spm ps file to current nii directory & convert to pdf
-spm_ps_file = dir(fullfile(pwd,'spm_*.ps'));
-if ~isempty(spm_ps_file)
-    inputPS = spm_ps_file.name;
-    outputPDF = 'spm_realign.pdf';
-    ghostscriptPath = '/opt/homebrew/bin/gs'; 
-    command = sprintf('%s -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile="%s" "%s"', ghostscriptPath, outputPDF, inputPS);
-    system(command);
-    movefile(fullfile(pwd,inputPS),niidir)
-    movefile(fullfile(pwd,outputPDF),niidir)
-end
-
-diary off;
-movefile(fullfile(pwd,output_file),jobdir)
 
 end
 

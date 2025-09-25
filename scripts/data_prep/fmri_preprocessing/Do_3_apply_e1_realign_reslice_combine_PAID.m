@@ -1,40 +1,63 @@
+%% ========================================================================
+%  Script: apply_e1_realign_reslice_combine_PAID.m
+%
+%  Purpose
+%    (1) Apply realignment (voxel-to-world) from echo-1 to echoes 2–3
+%    (2) Reslice volumes for all echoes (writes 'r*.nii')
+%    (3) Combine echoes using PAID weights (w ∝ tSNR * TE) -> fvol_###.nii
+%
+%  Assumed layout (per subject)
+%    <dat_folder>/<SubID>/
+%       ├─ nifti/
+%       │   ├─ <Sess>_me/                % contains <Sess>_rest*_e[1-3].nii
+%       │   ├─ functional/<Sess>/        % combined output fvol_###.nii
+%       │   ├─ tSNRmaps/                 % per-echo tSNR maps (written here)
+%       │   └─ w_tSNR/                   % w ∝ tSNR*TE maps (written here)
+%       └─ MRIjobs/
+%
+%  Notes
+%    - Default nscans = 310; NODEAP_44/S1D1 = 205
+%    - Realignment parameters are assumed to be estimated already on e1
+%    - This script writes resliced images (prefix 'r') for ALL echoes
+%    - PAID combine: weights w_j = (tSNR_j * TE_j) / sum_k (tSNR_k * TE_k)
+% ========================================================================
 
-
-% this goes over each subject and each session to (1) apply the realignment
-% parameters from 1st echo to other echoes, (2) reslice volumes in all the
-% echoes, (3) combine using the PAID weighting scheme
-
+%% 0) Setup -----------------------------------------------------------------
 clear; clc;
-HomeDir = '/Volumes/X9Pro/NODEAP/MRI';
-TEs = [14.60, 39.04, 63.48];
+
+% Echo metadata
+TEs    = [14.60, 39.04, 63.48];
 nechos = 3;
-SubIDlist = dir(fullfile(HomeDir, 'NODEAP*'));
-SubIDlist = SubIDlist([SubIDlist.isdir]); % only keep directories
-nSubIDlist = length(SubIDlist);
 
-rest_names = {'D0','S1D1','S1D2','S2D1','S2D2','S3D1','S3D2'};
-n_rest_names = length(rest_names);
+% Data root (fallback to prior location if needed)
+dat_folder = '/Volumes/X9Pro/NODEAP/MRI';
 
-[~, scriptName, ~] = fileparts(mfilename('fullpath'));
+% Subjects
+SubIDlist = dir(fullfile(dat_folder, 'NODEAP*'));
+SubIDlist = SubIDlist([SubIDlist.isdir]);
+nSub      = numel(SubIDlist);
 
-spm('Defaults','fMRI')
+% Sessions (order matters)
+rest_names   = {'D0','S1D1','S1D2','S2D1','S2D2','S3D1','S3D2'};
+n_rest_names = numel(rest_names);
+
+% SPM defaults (keep your memory settings)
+spm('Defaults','fMRI');
 global defaults
-defaults.stats.maxmem = 2 ^ 34; % based on RAM = 32GB
-defaults.stats.resmem = true; % allow temp files to be kept in memory
+defaults.stats.maxmem = 2 ^ 34;   % ~16GiB max for stats ops (based on 32GB RAM)
+defaults.stats.resmem = true;     % allow temp arrays in memory
+spm_jobman('initcfg');
 
-%%
-for subj = 14:nSubIDlist
-    
-    tic
+%% 1) Loop over subjects ----------------------------------------------------
+for subj = 1:nSubIDlist
     SubID = SubIDlist(subj).name;
-    SubDir = fullfile(HomeDir,SubID);
+    SubDir = fullfile(dat_folder,SubID);
     niidir = fullfile(SubDir, 'nifti');
     jobdir = fullfile(SubDir, 'MRIjobs');
     
-    output_file = sprintf('output_%s_%s.txt', scriptName, string(datetime));
-    diary(output_file); % keep notes of outputs
+    fprintf('\n================ %s ================\n', SubID);
 
-%%
+%% 2) Loop over rest sessions ------------------------------------------
 for r = 1:n_rest_names % to loop over rest_names
     
     curr_rest = rest_names{r};
@@ -51,7 +74,8 @@ for r = 1:n_rest_names % to loop over rest_names
         nscans = 310;
     end
     
-    if numel(dir(fullfile(functdir, 'fvol_*.nii')))==nscans % skip current session if the functional dir has all combined scans
+    % skip current session if the functional dir has all combined scans
+    if numel(dir(fullfile(functdir, 'fvol_*.nii')))==nscans 
         fprintf('functional images have been converted for %s\n',functdir)
         continue;
     end
@@ -60,7 +84,7 @@ for r = 1:n_rest_names % to loop over rest_names
         continue;
     end
     
-    % apply the voxel-to-world mapping from the realigned echo 1 to other echoes by updating header files
+    %% (1) Apply e1 realignment transforms to e2/e3 headers -------------
     for i = 1:nscans
         V = spm_get_space(sprintf('%s,%01d', fullfile(medir, n_e1(1).name),i));
         for iecho = 2:nechos
@@ -69,8 +93,7 @@ for r = 1:n_rest_names % to loop over rest_names
         end
     end
 
-%%
-% reslice volumes in all echoes
+%% (2) Reslice all echoes (writes 'r*.nii') -------------------------
 fimages = [];
 func_ctr = 0;
 rfilename = [];
@@ -98,8 +121,9 @@ save(fname, 'matlabbatch');
 spm_jobman('run', matlabbatch);
 
     
-%% COMBINE ECHOS
-% compute tSNR maps per echo
+%% (3) PAID combine: tSNR, weights, fused fvol_###.nii --------------
+fprintf('  ↳ Computing tSNR & PAID weights; combining echoes ...\n');
+
 tSNPmapsdir = fullfile(niidir,'tSNPmaps');
 if ~exist(tSNPmapsdir,'dir')
     mkdir(tSNPmapsdir)
@@ -166,12 +190,6 @@ for i = 1:nscans
 end
 
 end % end of sessions
-
-toc
-
-diary off;
-movefile(fullfile(pwd,output_file),niidir)
-
 end % end of subjects
 
 

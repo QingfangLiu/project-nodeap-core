@@ -44,26 +44,42 @@
 
 ---
 
-## Summary of MRI Data Issues
+# Summary of MRI Data Issues
 
-### Missing Data
+## Missing Data
 
-- `NODEAP_30`: Missing **S3D2** (Sham)
-- `NODEAP_83`: Missing **S3D1** (cTBS)
-- `NODEAP_44`: **S1D1** has partial acquisition (only 205 volumes) during cTBS scan
-- `NODEAP_87`, `NODEAP_88`: Identical data for **D0** and **S1D1**
-  - Resting-state data before S1D1 was not collected
-  - Both subjects had Sham on S1D1, so S1D1 was reused as D0 to calculate stimulation coordinates
-  - These scans should only be used **once** when analyzing across the 7-session timeline
-  - Only the compressed `D0_rest` folder is retained; D0 data should be treated as missing
-- `NODEAP_41`: **S3D2** has different image dimensions (**104×104×78**)
-  - Should be fine if a **normalization** step is applied
-  - For **realignment**, handle this session separately
-  - If using **native-space processing**, add an additional **reslicing step** (i.e., apply `+'r'` prefix)
+* `NODEAP_30`: Missing **S3D2** (Sham)
+* `NODEAP_83`: Missing **S3D1** (cTBS)
+* `NODEAP_44`: **S1D1** has partial acquisition (only 205 volumes) during cTBS scan
+* `NODEAP_87`, `NODEAP_88`: Identical data for **D0** and **S1D1**
 
-### Handling in Analysis
+  * Resting-state data before S1D1 was not collected.
+  * Both subjects had Sham on S1D1, so S1D1 was reused as D0 to calculate stimulation coordinates.
+  * These scans should only be used **once** when analyzing across the 7-session timeline.
+  * Only the compressed `D0_rest` folder is retained; D0 data should be treated as missing.
+* `NODEAP_41`:
 
-- **Missing sessions** are treated as missing data when standardizing motion-related metrics (e.g., diff and var) across sessions
-- For `NODEAP_44` **S1D1**:
-  - The 205 available volumes were included in the standardization
-  - Global connectivity was computed based on the available data
+  * **What happened:** Session **S3D2** was acquired at **104×104×78**, while all other sessions for this subject are **104×104×60**.
+  * **How we addressed it in the current pipeline:**
+
+    1. Split means into two blocks for `NODEAP_41`:
+
+       * Block 1: **D0..S3D1** → `functional/mean_fvol_1.nii`
+       * Block 2: **S3D2** → `functional/mean_fvol_2.nii`
+    2. **Coregister (estimate only)** each block’s mean to T1 and apply the transform to the corresponding 4D session files.
+
+       * No `r*` files are created; SPM writes transform sidecars; original NIfTI headers remain intact.
+    3. **Normalize (write)** all sessions to MNI at **3 mm** and **2 mm**, then **smooth (6 mm FWHM)**.
+
+       * Per-session outputs: `w3fvol_4d.nii` → `s6w3fvol_4d.nii`, and `w2fvol_4d.nii` → `s6w2fvol_4d.nii`.
+  * **Status:** `NODEAP_41` anomaly is resolved under the normalize-then-smooth pipeline.
+
+## Handling in Analysis
+
+* **Missing sessions** are treated as missing data when standardizing motion-related metrics (e.g., diff and var) across sessions.
+* For `NODEAP_44` **S1D1**:
+
+  * The 205 available volumes were included in the standardization.
+
+
+

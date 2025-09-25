@@ -1,14 +1,42 @@
+%% ========================================================================
+%  Script: build_subject_mean_fMRI.m
+%
+%  Purpose
+%    - For each subject, concatenate all available session-level combined
+%      ME fMRI volumes (fvol_###.nii) into a single 4D per session (if needed),
+%      then stack across sessions and write the across-session mean image:
+%        nifti/functional/mean_fvol.nii
+%
+%  Inputs (directory layout)
+%    <dat_folder>/<SubID>/nifti/functional/<Sess>/fvol_###.nii
+%    count table: /Volumes/X9Pro/NODEAP/experiment_metadata/MRI_func_count.xlsx
+%      (rows = subjects; cols = {'D0','S1D1','S1D2','S2D1','S2D2','S3D1','S3D2'})
+%      nonzero entries indicate the session exists (310 or 205 vols)
+%
+%  Output (per subject)
+%    <dat_folder>/<SubID>/nifti/functional/mean_fvol.nii
+%
+%  Notes
+%    - Skips subject NODEAP_41 due to different image dimension.
+%    - If mean_fvol.nii already exists for a subject, that subject is skipped.
+%    - If <Sess>/fvol_4d.nii doesn’t exist, merges 3D fvol_###.nii → fvol_4d.nii
+%      and deletes the 3D fvol_###.nii afterward (as in your original code).
+% ========================================================================
 
 tic
 clear; clc;
-HomeDir = '/Volumes/X9Pro/NODEAP/MRI';
 
-SubIDlist = dir(fullfile(HomeDir, 'NODEAP*'));
-SubIDlist = SubIDlist([SubIDlist.isdir]); % only keep directories
-nSubIDlist = length(SubIDlist);
+% Data root 
+dat_folder = '/Volumes/X9Pro/NODEAP/MRI';
 
-% read MRI count file
-count_table = xlsread('/Volumes/X9Pro/NODEAP/MRI_func_count.xlsx');
+% Subjects
+SubIDlist = dir(fullfile(dat_folder, 'NODEAP*'));
+SubIDlist = SubIDlist([SubIDlist.isdir]);
+nSub      = numel(SubIDlist);
+
+% Read MRI count table
+count_xlsx = '/Volumes/X9Pro/NODEAP/experiment_metadata/MRI_func_count.xlsx';
+count_table = readmatrix(count_xlsx);   % falls back to xlsread-like behavior
 
 rest_names = {'D0','S1D1','S1D2','S2D1','S2D2','S3D1','S3D2'};
 n_rest_names = length(rest_names);
