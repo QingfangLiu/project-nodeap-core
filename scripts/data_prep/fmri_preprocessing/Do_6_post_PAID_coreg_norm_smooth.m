@@ -106,7 +106,7 @@ for r = 1:n_rest_names % to loop over rest_names
     curr_func_dir = fullfile(niidir,'functional',curr_rest);
     
     % skip if either directory does not exist
-    if count_table(subj,r)==0
+    if count_table(subj,r+1)==0
         disp('Not enough data, skipping this iteration ...')
         continue;
     end

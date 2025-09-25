@@ -67,7 +67,7 @@ end
 past_volumes = 0;
 
 for r = 1:n_rest_names % to loop over rest_names
-    if count_table(subj,r)==0
+    if count_table(subj,r+1)==0
         disp('Not enough data, skipping this iteration ...')
         continue;
     end
