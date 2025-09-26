@@ -26,13 +26,16 @@
 
 
 rm(list = ls())
-source('Setup.R')
-SubInfo = read.xlsx('../../data_input/SubConds.xlsx') %>%
-  filter(Include == 1)
+
+# load_setup.R
+project_folder <- "/Users/liuq13/project-nodeap-core"
+source(file.path(project_folder, "scripts", "utils", "Setup.R"))
+
+SubInfo = read.xlsx(file.path(project_folder,'beh_data_found','SubConds.xlsx')) 
 Subs = SubInfo$SubID
 
 # Set your path to where all subject/session folders are
-base_dir <- "/Volumes/X9Pro/NODEAP/FuncConn_spheres"
+base_dir <- "/Volumes/X9Pro/NODEAP/FuncConn_AAL"
 # Get all mat file paths
 mat_files <- list.files(base_dir, pattern = "conn_matrix_4spheres.mat", 
                         recursive = TRUE, full.names = TRUE)
