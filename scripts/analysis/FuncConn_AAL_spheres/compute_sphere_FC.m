@@ -6,18 +6,34 @@
 
 clear; clc; close all
 
-studydir = '/Volumes/X9Pro/NODEAP';
-MRIdir = fullfile(studydir,'MRI');
-SubIDlist = dir(fullfile(MRIdir, 'NODEAP*'));
-SubIDlist = SubIDlist([SubIDlist.isdir]); % only keep directories
-nSubIDlist = length(SubIDlist);
+dat_folder = '/Volumes/X9Pro/NODEAP/MRI';
+project_folder <- "/Users/liuq13/project-nodeap-core";
+
+% Subject list (disk order)
+SubIDlist = dir(fullfile(dat_folder, 'NODEAP*'));
+SubIDlist = SubIDlist([SubIDlist.isdir]);
+SubIDs    = string({SubIDlist.name})';
+nSub      = numel(SubIDs);
 
 rest_names = {'D0','S1D1','S1D2','S2D1','S2D2','S3D1','S3D2'};
-maskpath = fullfile(getenv('HOME'),'NODEAP_scripts','Scripts_matlab/FuncConn_AAL_spheres/masks');
-MRIcount = readtable('/Volumes/X9Pro/NODEAP/MRI_func_count.xlsx',"ReadRowNames",true);
+
+maskpath = fullfile(project_folder,'atlas_masks','tissue_masks');
+
+count_xlsx = '/Volumes/X9Pro/NODEAP/experiment_metadata/MRI_func_count.xlsx';
+
+% Availability table (rows must align with SubID order above or contain ID col)
+count_table_raw = readmatrix(count_xlsx);
+% Heuristic: if table has >=8 cols, assume col 1 is an ID and sessions are cols 2..8
+if size(count_table_raw,2) >= 8
+    count_table = count_table_raw(:, 2:8);
+else
+    count_table = count_table_raw(:, 1:7);
+end
 
 gm_idx  = find(spm_read_vols(spm_vol(fullfile(maskpath, 'gm_0.1_2mm.nii')))  > 0);
-sphere_path = '/Volumes/X9Pro/NODEAP/ConnectivityMasks';
+
+sphere_path = fullfile(project_folder,'atlas_masks','ofc_connectivity_masks');
+
 spheres = {'aOFC_seed_right.nii', ...
     'aOFC_target_right.nii', ...
     'pOFC_seed_right.nii', ...
@@ -41,11 +57,12 @@ end
 
 taskList = {};
 count = 0;
-for subj = 1:length(SubIDlist)
+for subj = 1:nSub
     SubID = SubIDlist(subj).name;
     for r = 1:length(rest_names)
         curr_rest = rest_names{r};
-        if MRIcount{SubID, curr_rest} ~= 1, continue; end  % ignore missing or half-missing sessions
+        if count_table(subj,r) ~= 1, continue; end  % ignore missing or half-missing sessions
+
         count = count + 1;
         taskList(count,:) = {SubID, curr_rest};
     end
