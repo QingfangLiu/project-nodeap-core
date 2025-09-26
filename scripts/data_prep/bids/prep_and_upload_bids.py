@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 
 # --- USER CONFIGURATION ---
-dataset_id = "ds006671"
+dataset_id = "ds006693"
 dataset_dir = Path("/Users/liuq13/nodeap-bids/")
 
 # --- STEP 1: MAKE ANAT BIDS ---

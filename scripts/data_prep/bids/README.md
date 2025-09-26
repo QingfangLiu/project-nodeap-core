@@ -59,7 +59,7 @@ Use the OpenNeuro CLI (via Deno):
 
 ```bash
 deno run -A jsr:@openneuro/cli upload \
-  --dataset ds006671 \
+  --dataset ds006693 \
   --affirmDefaced \
   /Users/liuq13/nodeap-bids/
 ```
