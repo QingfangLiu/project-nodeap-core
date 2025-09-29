@@ -30,8 +30,6 @@ beh_found_dir <- file.path(project_folder, "beh_data_found")
 beh_model_dir <- file.path(project_folder, "beh_modeling")
 
 pd <- position_dodge(0.6) # set dodge width
-#pd <- position_jitterdodge(jitter.width = 0.1, dodge.width = 0.6, jitter.height = 0)
-
 pd_jitter <- position_jitterdodge(jitter.width = 0.000, dodge.width = 0.2, jitter.height = 0)
 pd_dodge <- position_dodge(0.2)
 
