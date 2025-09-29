@@ -1,5 +1,4 @@
 
-% This is copied from TK's code to recreate the TMS folders
 
 clear all
 close all
@@ -9,25 +8,28 @@ do_dicom_import = 1;
 do_bias_correction = 1;     % save bias corrected anatomical image for TMS naviation
 
 % add path to dcm2niix
-dcm2niipath = '/Applications/MRIcroGL.app/Contents/Resources/dcm2niix';
+dcm2niipath  = '/Applications/MRIcroGL.app/Contents/Resources/dcm2niix';
+dat_folder   = '/Volumes/X9Pro/NODEAP/MRI';
 
-studydir = '/Volumes/X9Pro/NODEAP/MRI';
-SubIDlist = dir(fullfile(studydir, 'NODEAP*'));
-SubIDlist = SubIDlist([SubIDlist.isdir]); % only keep directories
-nSubIDlist = length(SubIDlist);
+if do_bias_correction
+    spm('defaults','fmri');
+    spm_jobman('initcfg');
+end
 
-for subj = 2:nSubIDlist
+%% 1) Discover subjects ----------------------------------------------------------
+SubIDlist = dir(fullfile(dat_folder, 'NODEAP*'));
+SubIDlist = SubIDlist([SubIDlist.isdir]);       % keep directories only
+nSub      = numel(SubIDlist);
 
-    sn = SubIDlist(subj).name;
+for subj = 1:nSub
 
-% get data path
-subdir = fullfile(studydir,sn);
+    SubID = SubIDlist(subj).name;
+    subdir = fullfile(dat_folder, SubID);
+    fprintf('>>> Processing %s (%d/%d)\n', SubID, subj, nSub);
 
-%%% DICOM IMPORT 
 if do_dicom_import
     matlabbatch = [];
     
-    % all dicoms must be in their subfolders within 'dicoms', e.g.,.../NODEAP/NODEAP_pilot01/dicoms
     anatpath = fullfile(subdir, 'dicoms', 'D0_T1');
     functpath = fullfile(subdir, 'dicoms', 'D0_rest');
 

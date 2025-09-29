@@ -1,10 +1,4 @@
 
-% QL's replication of TK's code
-% simply because I don't have the processed data folder
-% and later on I might want to repeate this using different multi-echo 
-% data processing method to see how much things will change
-
-%processing_coordinate_pipeline_NODEAP
 clear all
 close all
 
@@ -24,7 +18,7 @@ TR = 1.5;
 TEs = [14.60, 39.04, 63.48];
 
 %%
-for subj = 2 %:nSubIDlist
+for subj = 1:nSubIDlist
 
     sn = SubIDlist(subj).name;
 

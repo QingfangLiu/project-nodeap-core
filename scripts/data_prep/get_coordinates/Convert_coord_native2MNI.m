@@ -1,7 +1,5 @@
 
-% This code is adapted from the same script used for SPEEDTMS,
-% but here for NODEAP
-% difference is that each person has only one set of stimulation
+% each person has only one set of stimulation
 % coordinates, either targeting aOFC or pOFC
 
 clc; clear; close all
