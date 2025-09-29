@@ -7,5 +7,10 @@ beh_modeling/results/posterior_learning_model.rds
 
 .DS_Store
 
+# Ignore coordinate scripts
+scripts/data_prep/get_coordinates/
+
+# Ignore TMS visualization
+tms_visualization/
 
 
