@@ -19,36 +19,25 @@ project-nodeap-core/
 │
 ├─ beh_modeling/               		# Model fitting scripts and outputs 
 │
-├─ data_mri_processed/         		# Processed MRI derivatives
-│
 ├─ Figs_final/                		# Final publication-ready figures
 │
 ├─ Figs_generated/             		# Figures saved directly by R/Python code
 │
 ├─ scripts/                         # All analysis and preprocessing code
-│  ├─ analysis/                     # Data analysis code
-│  │  ├─ beh_analysis/              # Behavioral statistical analysis
-│  │  ├─ FuncConn_AAL_spheres/      # Functional connectivity analyses using AAL ROI spheres
-│  │  ├─ mri_analysis/              # MRI analysis scripts 
-│  │  └─ ReplicatingTMSProcessing/  # Scripts replicating TMS processing pipeline
-│  │
-│  ├─ data_prep/                    # Data preparation scripts
-│  │  ├─ bids/                      # Scripts for BIDS conversion
-│  │  ├─ check_metadata/            # Scripts to organize metadata
-│  │  ├─ find_beh_data/             # Utilities for locating behavioral data
-│  │  ├─ fmri_preprocessing/        # Preprocessing pipeline in MATLAB
-│  │  ├─ get_coordinates/           # Extract/convert coordinates for analysis
-│  │  └─ process_beh_data/          # Behavioral data cleaning/merging scripts
-│  │
+│  ├─ beh_analysis/              	# Behavioral statistical analysis
+│  ├─ beh_format/              		# Format behavioral data for downstream analysis
+│  ├─ fc_AAL_spheres/           	# Functional connectivity analyses using AAL ROI spheres
+│  ├─ mri_postproc_VAE/             # MRI analysis from VAE outputs 
+│  ├─ get_coordinates/           	# Extract/convert coordinates for analysis
+│  ├─ fmri_preprocessing/        	# Preprocessing pipeline
 │  ├─ utils/                        # Helper functions, configs
-│  └─ tms_visualization/            # Visualization of TMS targets/networks
-│
 └─ README.md                   		# Project overview (this file)
 ```
 
-For details on the hierarchical Bayesian behavioral modeling used in this project, see the dedicated [README in `beh_modeling/`](./beh_modeling/README.md).
+- For details on the hierarchical Bayesian behavioral modeling used in this project, see the dedicated [README in `beh_modeling/`](./beh_modeling/README.md).
+- The resting-state fMRI data have been publicly deposited on [OpenNeuro (ds006693)](https://openneuro.org/datasets/ds006693).  
+- The cVAE analysis of resting-state fMRI data is available in a [standalone repository](https://github.com/QingfangLiu/project-nodeap-fmri-cvae) containing session-wise processed functional connectivity data.  
 
-The resting-state fMRI data have been publicly deposited on [OpenNeuro (ds006693)](https://openneuro.org/datasets/ds006693).
 
 ## Citation
 Please cite our paper if you use this dataset or code:
