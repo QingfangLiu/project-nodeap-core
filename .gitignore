@@ -7,8 +7,8 @@ beh_modeling/results/posterior_learning_model.rds
 
 .DS_Store
 
-# Ignore coordinate scripts
-scripts/data_prep/get_coordinates/
+# Ignore data prep script
+scripts/data_prep/
 
 # Ignore TMS visualization
 tms_visualization/
