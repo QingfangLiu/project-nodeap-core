@@ -13,9 +13,6 @@ scripts/data_prep/
 # Ignore TMS visualization
 tms_visualization/
 
-# Ignore processed MRI data
-data_mri_processed/
-
 # odor images
 OdorImages/
 

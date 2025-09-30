@@ -18,6 +18,8 @@ project-nodeap-core/
 │
 ├─ beh_modeling/               		# Model fitting scripts and outputs 
 │
+├─ data_mri_processed/              # Data copied from cVAE repo for downstream analysis
+│
 ├─ Figs_final/                		# Final publication-ready figures
 │
 ├─ Figs_generated/             		# Figures saved directly by R/Python code
@@ -48,8 +50,10 @@ Some sessions contain irregularities (missing data, experiment errors, or specia
 See [DATA_NOTES.md](notes/DATA_NOTES.md) for the full log.
 
 ## Contact
-Qingfang Liu  
+Qingfang Liu
+
 Research Fellow, National Institute on Drug Abuse (NIDA) 
+
 Email: psychliuqf@gmail.com
 
 

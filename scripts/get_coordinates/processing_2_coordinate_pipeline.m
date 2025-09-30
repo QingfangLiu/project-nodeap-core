@@ -5,12 +5,15 @@ close all
 do_combine_echos = 1;
 do_select_coordinate =1;
 
-studydir = '/Volumes/X9Pro/NODEAP/MRI';
-SubIDlist = dir(fullfile(studydir, 'NODEAP*'));
-SubIDlist = SubIDlist([SubIDlist.isdir]); % only keep directories
-nSubIDlist = length(SubIDlist);
+project_folder = '/Users/liuq13/project-nodeap-core';
+maskdir     = fullfile(project_folder, 'atlas_masks', 'ofc_connectivity_masks');
+tmpl = fullfile(project_folder, 'tissue_masks', 'rTPM_point1_NoCerebellum.nii');
 
-tmpl = '/Users/qingfangliu/Library/CloudStorage/Dropbox/KahntLab/Project_SPEEDTMS/Analysis/ROIs/rTPM_point1_NoCerebellum.nii';
+dat_folder   = '/Volumes/X9Pro/NODEAP/MRI';
+
+SubIDlist = dir(fullfile(dat_folder, 'NODEAP*'));
+SubIDlist = SubIDlist([SubIDlist.isdir]);       % keep directories only
+nSub      = numel(SubIDlist);
 
 nscans = 310; % 310 volumes for ME sequnce
 nechos = 3;
@@ -18,7 +21,7 @@ TR = 1.5;
 TEs = [14.60, 39.04, 63.48];
 
 %%
-for subj = 1:nSubIDlist
+for subj = 1:nSub
 
     sn = SubIDlist(subj).name;
 
@@ -34,13 +37,12 @@ regions(2).seedName = 'pOFC_seed_right';
 regions(2).targetMNI = [46, 38, 14];
 regions(2).targetName = 'pOFC_target_right';
 
-subdir = fullfile(studydir,sn);
+subdir = fullfile(dat_folder,sn);
 niidir = fullfile(subdir, 'nii_for_TMS');
 medir = fullfile(niidir, 'day0_me'); % path to multi-echo data
 functdir = fullfile(niidir, 'functional'); % path to rsfRMI images
 anatdir = fullfile(niidir, 'anat'); % path to anatomy
 jobdir = fullfile(niidir, 'jobs');
-maskdir = fullfile(studydir, 'ConnectivityMasks'); % path to masks for study
 unnormdir = fullfile(subdir, 'UnnormedMasks');  %path to native space masks for each subejct
 
 cd(niidir)
